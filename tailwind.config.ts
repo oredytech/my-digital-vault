@@ -57,6 +57,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        "cyan-glow": "hsl(var(--cyan-glow))",
+        "cyan-muted": "hsl(var(--cyan-muted))",
+      },
+      fontFamily: {
+        sans: ["Manrope", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        vault: "var(--shadow-vault)",
       },
       borderRadius: {
         lg: "var(--radius)",

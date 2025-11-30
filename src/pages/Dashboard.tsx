@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { LinksSection } from "@/components/dashboard/LinksSection";
 import { AccountsSection } from "@/components/dashboard/AccountsSection";
 import { IdeasSection } from "@/components/dashboard/IdeasSection";
+import { RemindersSection } from "@/components/dashboard/RemindersSection";
 import { toast } from "sonner";
 
 type ActiveSection = "links" | "accounts" | "ideas" | "reminders";
@@ -72,12 +73,7 @@ const Dashboard = () => {
             {activeSection === "links" && <LinksSection />}
             {activeSection === "accounts" && <AccountsSection />}
             {activeSection === "ideas" && <IdeasSection />}
-            {activeSection === "reminders" && (
-              <div className="text-center py-20">
-                <h2 className="text-2xl font-bold mb-4">Rappels</h2>
-                <p className="text-muted-foreground">Section en cours de développement</p>
-              </div>
-            )}
+            {activeSection === "reminders" && <RemindersSection />}
           </div>
         </main>
       </div>

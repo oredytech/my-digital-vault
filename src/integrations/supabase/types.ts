@@ -19,12 +19,15 @@ export type Database = {
           category_id: string | null
           cpanel_url: string | null
           created_at: string
+          duration_months: number | null
           email: string | null
           hosting_provider: string | null
           id: string
           name: string
           notes: string | null
+          notification_sent: boolean | null
           password_encrypted: string | null
+          phone: string | null
           updated_at: string
           user_id: string
           username: string | null
@@ -34,12 +37,15 @@ export type Database = {
           category_id?: string | null
           cpanel_url?: string | null
           created_at?: string
+          duration_months?: number | null
           email?: string | null
           hosting_provider?: string | null
           id?: string
           name: string
           notes?: string | null
+          notification_sent?: boolean | null
           password_encrypted?: string | null
+          phone?: string | null
           updated_at?: string
           user_id: string
           username?: string | null
@@ -49,12 +55,15 @@ export type Database = {
           category_id?: string | null
           cpanel_url?: string | null
           created_at?: string
+          duration_months?: number | null
           email?: string | null
           hosting_provider?: string | null
           id?: string
           name?: string
           notes?: string | null
+          notification_sent?: boolean | null
           password_encrypted?: string | null
+          phone?: string | null
           updated_at?: string
           user_id?: string
           username?: string | null
@@ -281,7 +290,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_account_expiration_reminder: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

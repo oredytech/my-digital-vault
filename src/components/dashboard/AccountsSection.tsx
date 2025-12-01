@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Users, Eye, EyeOff, Trash2, Mail, Lock, Phone, Grid3x3, List, Calendar } from "lucide-react";
+import { Plus, Users, Eye, EyeOff, Trash2, Mail, Lock, Phone, Grid3x3, List, Calendar, Tag } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -24,11 +24,20 @@ interface Account {
   notes: string | null;
   phone: string | null;
   duration_months: number | null;
+  category_id: string | null;
   created_at: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
 }
 
 export function AccountsSection() {
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
@@ -44,11 +53,27 @@ export function AccountsSection() {
     notes: "",
     phone: "",
     duration_months: "",
+    category_id: "",
   });
 
   useEffect(() => {
     fetchAccounts();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const fetchAccounts = async () => {
     try {
@@ -69,13 +94,38 @@ export function AccountsSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validation
+    if (!formData.name.trim() || formData.name.length > 200) {
+      toast.error("Le nom doit contenir entre 1 et 200 caractères");
+      return;
+    }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error("Email invalide");
+      return;
+    }
+
+    if (formData.notes && formData.notes.length > 2000) {
+      toast.error("Les notes ne peuvent pas dépasser 2000 caractères");
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
       const { error } = await supabase.from("accounts").insert({
-        ...formData,
+        name: formData.name.trim(),
+        website_url: formData.website_url.trim() || null,
+        username: formData.username.trim() || null,
+        email: formData.email.trim() || null,
+        password_encrypted: formData.password_encrypted || null,
+        cpanel_url: formData.cpanel_url.trim() || null,
+        hosting_provider: formData.hosting_provider.trim() || null,
+        notes: formData.notes.trim() || null,
+        phone: formData.phone.trim() || null,
         duration_months: formData.duration_months ? parseInt(formData.duration_months) : null,
+        category_id: formData.category_id || null,
         user_id: user.id,
       });
 
@@ -98,6 +148,7 @@ export function AccountsSection() {
         notes: "",
         phone: "",
         duration_months: "",
+        category_id: "",
       });
       setOpen(false);
       fetchAccounts();
@@ -129,13 +180,17 @@ export function AccountsSection() {
     });
   };
 
+  const getCategoryForAccount = (categoryId: string | null) => {
+    return categories.find(c => c.id === categoryId);
+  };
+
   if (loading) {
     return <div className="text-center py-8">Chargement...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-foreground">Mes Comptes</h2>
           <p className="text-muted-foreground mt-1">Gérez vos comptes et mots de passe en toute sécurité</p>
@@ -161,12 +216,12 @@ export function AccountsSection() {
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="shadow-vault">
+              <Button className="shadow-vault w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau compte
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Ajouter un compte</DialogTitle>
               </DialogHeader>
@@ -177,8 +232,27 @@ export function AccountsSection() {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    maxLength={200}
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Catégorie</Label>
+                  <Select
+                    value={formData.category_id}
+                    onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une catégorie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="website_url">URL du site web</Label>
@@ -270,6 +344,7 @@ export function AccountsSection() {
                     id="notes"
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    maxLength={2000}
                     rows={3}
                   />
                 </div>
@@ -280,23 +355,32 @@ export function AccountsSection() {
         </div>
       </div>
 
-      <div className={viewMode === "grid" ? "grid gap-4 md:grid-cols-2" : "space-y-3"}>
+      <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3" : "space-y-3"}>
         {accounts.map((account) => {
           const expirationDate = account.duration_months 
             ? new Date(new Date(account.created_at).getTime() + account.duration_months * 30 * 24 * 60 * 60 * 1000)
             : null;
+          const category = getCategoryForAccount(account.category_id);
           
           return (
             <Card key={account.id} className="hover:shadow-vault transition-shadow">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                <div className="flex items-start space-x-3 flex-1">
+                <div className="flex items-start space-x-3 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Users className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg">{account.name}</CardTitle>
+                    <CardTitle className="text-lg truncate">{account.name}</CardTitle>
                     {account.hosting_provider && (
                       <p className="text-xs text-muted-foreground mt-1">{account.hosting_provider}</p>
+                    )}
+                    {category && (
+                      <div className="flex items-center mt-1">
+                        <Tag className="w-3 h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />
+                        <span className="text-xs" style={{ color: category.color || '#06b6d4' }}>
+                          {category.name}
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -312,13 +396,13 @@ export function AccountsSection() {
               <CardContent className="space-y-3">
                 {account.email && (
                   <div className="flex items-center text-sm">
-                    <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <Mail className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
                     <span className="truncate">{account.email}</span>
                   </div>
                 )}
                 {account.phone && (
                   <div className="flex items-center text-sm">
-                    <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <Phone className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
                     <span className="truncate">{account.phone}</span>
                   </div>
                 )}
@@ -346,7 +430,7 @@ export function AccountsSection() {
                 )}
                 {expirationDate && (
                   <div className="flex items-center text-sm pt-2 border-t">
-                    <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <Calendar className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground">
                       Expire le {format(expirationDate, "dd MMMM yyyy", { locale: fr })}
                     </span>

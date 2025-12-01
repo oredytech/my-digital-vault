@@ -7,9 +7,10 @@ import { LinksSection } from "@/components/dashboard/LinksSection";
 import { AccountsSection } from "@/components/dashboard/AccountsSection";
 import { IdeasSection } from "@/components/dashboard/IdeasSection";
 import { RemindersSection } from "@/components/dashboard/RemindersSection";
+import { CategoriesSection } from "@/components/dashboard/CategoriesSection";
 import { toast } from "sonner";
 
-type ActiveSection = "links" | "accounts" | "ideas" | "reminders";
+type ActiveSection = "links" | "accounts" | "ideas" | "reminders" | "categories";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -61,19 +62,20 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-sidebar/20 to-background">
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         <Sidebar 
           activeSection={activeSection} 
           onSectionChange={setActiveSection}
           onSignOut={handleSignOut}
         />
         
-        <main className="flex-1 p-8 ml-64">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64">
           <div className="max-w-7xl mx-auto">
             {activeSection === "links" && <LinksSection />}
             {activeSection === "accounts" && <AccountsSection />}
             {activeSection === "ideas" && <IdeasSection />}
             {activeSection === "reminders" && <RemindersSection />}
+            {activeSection === "categories" && <CategoriesSection />}
           </div>
         </main>
       </div>

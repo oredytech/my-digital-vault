@@ -2,3 +2,6 @@ project_id = "ufuhxlroshwrpbdwgubd"
 
 [functions.suggest-ideas]
 verify_jwt = true
+
+[functions.send-reminder-email]
+verify_jwt = true

@@ -1,8 +1,8 @@
-import { Shield, Link2, Users, Lightbulb, Bell, LogOut } from "lucide-react";
+import { Shield, Link2, Users, Lightbulb, Bell, LogOut, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type ActiveSection = "links" | "accounts" | "ideas" | "reminders";
+type ActiveSection = "links" | "accounts" | "ideas" | "reminders" | "categories";
 
 interface SidebarProps {
   activeSection: ActiveSection;
@@ -16,10 +16,11 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
     { id: "accounts" as const, label: "Comptes", icon: Users },
     { id: "ideas" as const, label: "Idées", icon: Lightbulb },
     { id: "reminders" as const, label: "Rappels", icon: Bell },
+    { id: "categories" as const, label: "Catégories", icon: Tag },
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border shadow-vault">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border shadow-vault z-50 lg:z-auto overflow-y-auto lg:block hidden">
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-6 border-b border-sidebar-border">

@@ -6,30 +6,57 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Lightbulb, Sparkles, Trash2, Loader2 } from "lucide-react";
+import { Plus, Lightbulb, Sparkles, Trash2, Loader2, Grid3x3, List, Tag } from "lucide-react";
 
 interface Idea {
   id: string;
   title: string;
   content: string;
   ai_suggestions: any;
+  category_id: string | null;
   created_at: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
 }
 
 export function IdeasSection() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [generatingSuggestions, setGeneratingSuggestions] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [formData, setFormData] = useState({
     title: "",
     content: "",
+    category_id: "",
   });
 
   useEffect(() => {
     fetchIdeas();
+    fetchCategories();
   }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
 
   const fetchIdeas = async () => {
     try {
@@ -50,20 +77,32 @@ export function IdeasSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validation
+    if (!formData.title.trim() || formData.title.length > 200) {
+      toast.error("Le titre doit contenir entre 1 et 200 caractères");
+      return;
+    }
+
+    if (!formData.content.trim() || formData.content.length > 5000) {
+      toast.error("Le contenu doit contenir entre 1 et 5000 caractères");
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
       const { error } = await supabase.from("ideas").insert({
-        title: formData.title,
-        content: formData.content,
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        category_id: formData.category_id || null,
         user_id: user.id,
       });
 
       if (error) throw error;
 
       toast.success("Idée ajoutée avec succès");
-      setFormData({ title: "", content: "" });
+      setFormData({ title: "", content: "", category_id: "" });
       setOpen(false);
       fetchIdeas();
     } catch (error: any) {
@@ -108,112 +147,167 @@ export function IdeasSection() {
     }
   };
 
+  const getCategoryForIdea = (categoryId: string | null) => {
+    return categories.find(c => c.id === categoryId);
+  };
+
   if (loading) {
     return <div className="text-center py-8">Chargement...</div>;
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-foreground">Mes Idées</h2>
           <p className="text-muted-foreground mt-1">Capturez vos idées et enrichissez-les avec l'IA</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="shadow-vault">
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle idée
+        <div className="flex gap-2">
+          <div className="flex items-center border rounded-lg p-1 bg-muted/30">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              className="h-8 w-8"
+            >
+              <Grid3x3 className="w-4 h-4" />
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Ajouter une idée</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Titre</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="content">Contenu</Label>
-                <Textarea
-                  id="content"
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  rows={5}
-                  required
-                />
-              </div>
-              <Button type="submit" className="w-full">Ajouter</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+              className="h-8 w-8"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+          </div>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="shadow-vault w-full sm:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Nouvelle idée
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Ajouter une idée</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Titre *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    maxLength={200}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Catégorie</Label>
+                  <Select
+                    value={formData.category_id}
+                    onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une catégorie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="content">Contenu *</Label>
+                  <Textarea
+                    id="content"
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    maxLength={5000}
+                    rows={5}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">Ajouter</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {ideas.map((idea) => (
-          <Card key={idea.id} className="hover:shadow-vault transition-shadow">
-            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-              <div className="flex items-start space-x-3 flex-1">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Lightbulb className="w-5 h-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg">{idea.title}</CardTitle>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handleDelete(idea.id)}
-                className="flex-shrink-0"
-              >
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">{idea.content}</p>
-              
-              {idea.ai_suggestions ? (
-                <div className="border-t pt-4">
-                  <div className="flex items-center text-sm font-medium mb-2">
-                    <Sparkles className="w-4 h-4 mr-2 text-primary" />
-                    Suggestions IA
+      <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2" : "space-y-3"}>
+        {ideas.map((idea) => {
+          const category = getCategoryForIdea(idea.category_id);
+          return (
+            <Card key={idea.id} className="hover:shadow-vault transition-shadow">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                <div className="flex items-start space-x-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Lightbulb className="w-5 h-5 text-primary" />
                   </div>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">
-                    {idea.ai_suggestions.suggestions}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-lg truncate">{idea.title}</CardTitle>
+                    {category && (
+                      <div className="flex items-center mt-1">
+                        <Tag className="w-3 h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />
+                        <span className="text-xs" style={{ color: category.color || '#06b6d4' }}>
+                          {category.name}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : (
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => generateSuggestions(idea)}
-                  disabled={generatingSuggestions === idea.id}
-                  className="w-full"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(idea.id)}
+                  className="flex-shrink-0"
                 >
-                  {generatingSuggestions === idea.id ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Génération...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Enrichir avec l'IA
-                    </>
-                  )}
+                  <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground line-clamp-3">{idea.content}</p>
+                
+                {idea.ai_suggestions ? (
+                  <div className="border-t pt-4">
+                    <div className="flex items-center text-sm font-medium mb-2">
+                      <Sparkles className="w-4 h-4 mr-2 text-primary" />
+                      Suggestions IA
+                    </div>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {idea.ai_suggestions.suggestions}
+                    </p>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => generateSuggestions(idea)}
+                    disabled={generatingSuggestions === idea.id}
+                    className="w-full"
+                  >
+                    {generatingSuggestions === idea.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Génération...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Enrichir avec l'IA
+                      </>
+                    )}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {ideas.length === 0 && (

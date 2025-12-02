@@ -1,6 +1,7 @@
-import { Shield, Link2, Users, Lightbulb, Bell, LogOut, Tag } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 
 type ActiveSection = "links" | "accounts" | "ideas" | "reminders" | "categories";
 
@@ -11,6 +12,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarProps) {
+  const { theme, setTheme } = useTheme();
+  
   const navItems = [
     { id: "links" as const, label: "Liens", icon: Link2 },
     { id: "accounts" as const, label: "Comptes", icon: Users },
@@ -20,14 +23,16 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
   ];
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border shadow-vault z-50 lg:z-auto overflow-y-auto lg:block hidden">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-sidebar border-r border-sidebar-border shadow-vault z-50 overflow-y-auto hidden lg:block">
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="p-6 border-b border-sidebar-border">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-              <Shield className="w-6 h-6 text-primary" />
-            </div>
+            <img 
+              src="/logo.webp" 
+              alt="VaultKeep Logo" 
+              className="w-10 h-10 rounded-xl"
+            />
             <div>
               <h1 className="text-xl font-bold text-sidebar-foreground">VaultKeep</h1>
               <p className="text-xs text-muted-foreground">Coffre-fort digital</p>
@@ -58,7 +63,19 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-sidebar-border">
+        <div className="p-4 border-t border-sidebar-border space-y-2">
+          <Button
+            variant="ghost"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50"
+          >
+            {theme === "dark" ? (
+              <Sun className="w-5 h-5 mr-3" />
+            ) : (
+              <Moon className="w-5 h-5 mr-3" />
+            )}
+            {theme === "dark" ? "Mode clair" : "Mode sombre"}
+          </Button>
           <Button
             variant="ghost"
             onClick={onSignOut}

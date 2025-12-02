@@ -3,12 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Plus, Link2, ExternalLink, Trash2, Grid3x3, List, Tag } from "lucide-react";
+import { Plus, Link2, ExternalLink, Trash2, Grid3x3, List, Tag, Pencil } from "lucide-react";
 
 interface Link {
   id: string;
@@ -31,6 +31,7 @@ export function LinksSection() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState<Link | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [formData, setFormData] = useState({
     title: "",
@@ -74,10 +75,25 @@ export function LinksSection() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({ title: "", url: "", description: "", category_id: "" });
+    setEditingLink(null);
+  };
+
+  const openEditDialog = (link: Link) => {
+    setEditingLink(link);
+    setFormData({
+      title: link.title,
+      url: link.url,
+      description: link.description || "",
+      category_id: link.category_id || "",
+    });
+    setOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.title.trim() || formData.title.length > 200) {
       toast.error("Le titre doit contenir entre 1 et 200 caractères");
       return;
@@ -97,22 +113,37 @@ export function LinksSection() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      const { error } = await supabase.from("links").insert({
-        title: formData.title.trim(),
-        url: formData.url.trim(),
-        description: formData.description.trim() || null,
-        category_id: formData.category_id || null,
-        user_id: user.id,
-      });
+      if (editingLink) {
+        const { error } = await supabase
+          .from("links")
+          .update({
+            title: formData.title.trim(),
+            url: formData.url.trim(),
+            description: formData.description.trim() || null,
+            category_id: formData.category_id || null,
+          })
+          .eq("id", editingLink.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success("Lien modifié avec succès");
+      } else {
+        const { error } = await supabase.from("links").insert({
+          title: formData.title.trim(),
+          url: formData.url.trim(),
+          description: formData.description.trim() || null,
+          category_id: formData.category_id || null,
+          user_id: user.id,
+        });
 
-      toast.success("Lien ajouté avec succès");
-      setFormData({ title: "", url: "", description: "", category_id: "" });
+        if (error) throw error;
+        toast.success("Lien ajouté avec succès");
+      }
+
+      resetForm();
       setOpen(false);
       fetchLinks();
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'ajout du lien");
+      toast.error(error.message || "Erreur lors de l'opération");
     }
   };
 
@@ -139,8 +170,8 @@ export function LinksSection() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Mes Liens</h2>
-          <p className="text-muted-foreground mt-1">Organisez et accédez rapidement à vos liens importants</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mes Liens</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Organisez et accédez rapidement à vos liens importants</p>
         </div>
         <div className="flex gap-2">
           <div className="flex items-center border rounded-lg p-1 bg-muted/30">
@@ -161,16 +192,19 @@ export function LinksSection() {
               <List className="w-4 h-4" />
             </Button>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) resetForm();
+          }}>
             <DialogTrigger asChild>
-              <Button className="shadow-vault w-full sm:w-auto">
+              <Button className="shadow-vault flex-1 sm:flex-none">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau lien
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Ajouter un lien</DialogTitle>
+                <DialogTitle>{editingLink ? "Modifier le lien" : "Ajouter un lien"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -222,7 +256,9 @@ export function LinksSection() {
                     rows={3}
                   />
                 </div>
-                <Button type="submit" className="w-full">Ajouter</Button>
+                <Button type="submit" className="w-full">
+                  {editingLink ? "Modifier" : "Ajouter"}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -251,14 +287,22 @@ export function LinksSection() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(link.id)}
-                  className="flex-shrink-0"
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditDialog(link)}
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(link.id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {link.description && (

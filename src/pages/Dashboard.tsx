@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import { MobileNav } from "@/components/dashboard/MobileNav";
+import { MobileHeader } from "@/components/dashboard/MobileHeader";
 import { LinksSection } from "@/components/dashboard/LinksSection";
 import { AccountsSection } from "@/components/dashboard/AccountsSection";
 import { IdeasSection } from "@/components/dashboard/IdeasSection";
@@ -62,14 +64,19 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-sidebar/20 to-background">
-      <div className="flex flex-col lg:flex-row">
+      {/* Mobile Header */}
+      <MobileHeader onSignOut={handleSignOut} />
+      
+      <div className="flex">
+        {/* Desktop Sidebar */}
         <Sidebar 
           activeSection={activeSection} 
           onSectionChange={setActiveSection}
           onSignOut={handleSignOut}
         />
         
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64">
+        {/* Main Content */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 pb-24 lg:pb-8">
           <div className="max-w-7xl mx-auto">
             {activeSection === "links" && <LinksSection />}
             {activeSection === "accounts" && <AccountsSection />}
@@ -79,6 +86,12 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+      
+      {/* Mobile Bottom Navigation */}
+      <MobileNav 
+        activeSection={activeSection} 
+        onSectionChange={setActiveSection} 
+      />
     </div>
   );
 };

@@ -106,8 +106,8 @@ export function RemindersSection() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Mes Rappels</h2>
-          <p className="text-muted-foreground mt-1">Gérez vos rappels et notifications importantes</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mes Rappels</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Gérez vos rappels et notifications importantes</p>
         </div>
         <div className="flex items-center border rounded-lg p-1 bg-muted/30">
           <Button variant={viewMode === "grid" ? "secondary" : "ghost"} size="icon" onClick={() => setViewMode("grid")} className="h-8 w-8">

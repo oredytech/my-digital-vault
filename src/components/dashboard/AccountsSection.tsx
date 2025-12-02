@@ -7,10 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { Plus, Users, Eye, EyeOff, Trash2, Mail, Lock, Phone, Grid3x3, List, Calendar, Tag } from "lucide-react";
-import { format } from "date-fns";
+import { Plus, Users, Eye, EyeOff, Trash2, Mail, Lock, Phone, Grid3x3, List, Calendar as CalendarIcon, Tag, Pencil } from "lucide-react";
+import { format, differenceInMonths, addMonths } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Account {
   id: string;
@@ -40,8 +43,11 @@ export function AccountsSection() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [formData, setFormData] = useState({
     name: "",
     website_url: "",
@@ -52,7 +58,6 @@ export function AccountsSection() {
     hosting_provider: "",
     notes: "",
     phone: "",
-    duration_months: "",
     category_id: "",
   });
 
@@ -60,6 +65,14 @@ export function AccountsSection() {
     fetchAccounts();
     fetchCategories();
   }, []);
+
+  // Calculate duration when dates change
+  useEffect(() => {
+    if (startDate && endDate && endDate > startDate) {
+      const months = differenceInMonths(endDate, startDate);
+      // Duration will be calculated and stored
+    }
+  }, [startDate, endDate]);
 
   const fetchCategories = async () => {
     try {
@@ -91,10 +104,53 @@ export function AccountsSection() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      website_url: "",
+      username: "",
+      email: "",
+      password_encrypted: "",
+      cpanel_url: "",
+      hosting_provider: "",
+      notes: "",
+      phone: "",
+      category_id: "",
+    });
+    setStartDate(undefined);
+    setEndDate(undefined);
+    setEditingAccount(null);
+  };
+
+  const openEditDialog = (account: Account) => {
+    setEditingAccount(account);
+    setFormData({
+      name: account.name,
+      website_url: account.website_url || "",
+      username: account.username || "",
+      email: account.email || "",
+      password_encrypted: account.password_encrypted || "",
+      cpanel_url: account.cpanel_url || "",
+      hosting_provider: account.hosting_provider || "",
+      notes: account.notes || "",
+      phone: account.phone || "",
+      category_id: account.category_id || "",
+    });
+    
+    // Set dates based on created_at and duration
+    const createdDate = new Date(account.created_at);
+    setStartDate(createdDate);
+    if (account.duration_months) {
+      setEndDate(addMonths(createdDate, account.duration_months));
+    } else {
+      setEndDate(undefined);
+    }
+    setOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.name.trim() || formData.name.length > 200) {
       toast.error("Le nom doit contenir entre 1 et 200 caractères");
       return;
@@ -110,11 +166,18 @@ export function AccountsSection() {
       return;
     }
 
+    // Calculate duration in months from dates
+    let durationMonths: number | null = null;
+    if (startDate && endDate && endDate > startDate) {
+      durationMonths = differenceInMonths(endDate, startDate);
+      if (durationMonths < 1) durationMonths = 1; // Minimum 1 month
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      const { error } = await supabase.from("accounts").insert({
+      const accountData = {
         name: formData.name.trim(),
         website_url: formData.website_url.trim() || null,
         username: formData.username.trim() || null,
@@ -124,36 +187,39 @@ export function AccountsSection() {
         hosting_provider: formData.hosting_provider.trim() || null,
         notes: formData.notes.trim() || null,
         phone: formData.phone.trim() || null,
-        duration_months: formData.duration_months ? parseInt(formData.duration_months) : null,
+        duration_months: durationMonths,
         category_id: formData.category_id || null,
-        user_id: user.id,
-      });
+      };
 
-      if (error) throw error;
+      if (editingAccount) {
+        const { error } = await supabase
+          .from("accounts")
+          .update(accountData)
+          .eq("id", editingAccount.id);
 
-      // Trigger reminder creation if duration is set
-      if (formData.duration_months) {
-        await supabase.rpc('create_account_expiration_reminder');
+        if (error) throw error;
+        toast.success("Compte modifié avec succès");
+      } else {
+        const { error } = await supabase.from("accounts").insert({
+          ...accountData,
+          user_id: user.id,
+        });
+
+        if (error) throw error;
+
+        // Trigger reminder creation if duration is set
+        if (durationMonths) {
+          await supabase.rpc('create_account_expiration_reminder');
+        }
+
+        toast.success("Compte ajouté avec succès");
       }
 
-      toast.success("Compte ajouté avec succès");
-      setFormData({
-        name: "",
-        website_url: "",
-        username: "",
-        email: "",
-        password_encrypted: "",
-        cpanel_url: "",
-        hosting_provider: "",
-        notes: "",
-        phone: "",
-        duration_months: "",
-        category_id: "",
-      });
+      resetForm();
       setOpen(false);
       fetchAccounts();
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'ajout du compte");
+      toast.error(error.message || "Erreur lors de l'opération");
     }
   };
 
@@ -192,8 +258,8 @@ export function AccountsSection() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Mes Comptes</h2>
-          <p className="text-muted-foreground mt-1">Gérez vos comptes et mots de passe en toute sécurité</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mes Comptes</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Gérez vos comptes et mots de passe en toute sécurité</p>
         </div>
         <div className="flex gap-2">
           <div className="flex items-center border rounded-lg p-1 bg-muted/30">
@@ -214,16 +280,19 @@ export function AccountsSection() {
               <List className="w-4 h-4" />
             </Button>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) resetForm();
+          }}>
             <DialogTrigger asChild>
-              <Button className="shadow-vault w-full sm:w-auto">
+              <Button className="shadow-vault flex-1 sm:flex-none">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau compte
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Ajouter un compte</DialogTitle>
+                <DialogTitle>{editingAccount ? "Modifier le compte" : "Ajouter un compte"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -316,28 +385,69 @@ export function AccountsSection() {
                     placeholder="+33 6 12 34 56 78"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="duration_months">Durée du compte</Label>
-                  <Select
-                    value={formData.duration_months}
-                    onValueChange={(value) => setFormData({ ...formData, duration_months: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une durée" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0.25">1 semaine</SelectItem>
-                      <SelectItem value="1">1 mois</SelectItem>
-                      <SelectItem value="3">3 mois</SelectItem>
-                      <SelectItem value="6">6 mois</SelectItem>
-                      <SelectItem value="12">1 an</SelectItem>
-                      <SelectItem value="24">2 ans</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Un rappel sera créé 1 mois avant l'expiration
-                  </p>
+                
+                {/* Date Selection */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Date de création</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !startDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {startDate ? format(startDate, "dd/MM/yyyy") : "Sélectionner"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={setStartDate}
+                          locale={fr}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Date d'expiration</Label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !endDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {endDate ? format(endDate, "dd/MM/yyyy") : "Sélectionner"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={setEndDate}
+                          locale={fr}
+                          disabled={(date) => startDate ? date <= startDate : false}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                 </div>
+                {startDate && endDate && endDate > startDate && (
+                  <p className="text-xs text-muted-foreground">
+                    Durée: {differenceInMonths(endDate, startDate) || 1} mois - Un rappel sera créé 1 mois avant l'expiration
+                  </p>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notes</Label>
                   <Textarea
@@ -348,14 +458,16 @@ export function AccountsSection() {
                     rows={3}
                   />
                 </div>
-                <Button type="submit" className="w-full">Ajouter</Button>
+                <Button type="submit" className="w-full">
+                  {editingAccount ? "Modifier" : "Ajouter"}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3" : "space-y-3"}>
+      <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "space-y-3"}>
         {accounts.map((account) => {
           const expirationDate = account.duration_months 
             ? new Date(new Date(account.created_at).getTime() + account.duration_months * 30 * 24 * 60 * 60 * 1000)
@@ -384,14 +496,22 @@ export function AccountsSection() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(account.id)}
-                  className="flex-shrink-0"
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditDialog(account)}
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(account.id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {account.email && (
@@ -430,7 +550,7 @@ export function AccountsSection() {
                 )}
                 {expirationDate && (
                   <div className="flex items-center text-sm pt-2 border-t">
-                    <Calendar className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
+                    <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground">
                       Expire le {format(expirationDate, "dd MMMM yyyy", { locale: fr })}
                     </span>

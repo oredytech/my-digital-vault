@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Tag, Trash2, Folder, Star, Briefcase, Home, Heart, Code, Book } from "lucide-react";
+import { Plus, Tag, Trash2, Folder, Star, Briefcase, Home, Heart, Code, Book, Pencil } from "lucide-react";
 
 interface Category {
   id: string;
@@ -40,6 +40,7 @@ export function CategoriesSection() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     icon: "Folder",
@@ -66,6 +67,21 @@ export function CategoriesSection() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({ name: "", icon: "Folder", color: "#06b6d4" });
+    setEditingCategory(null);
+  };
+
+  const openEditDialog = (category: Category) => {
+    setEditingCategory(category);
+    setFormData({
+      name: category.name,
+      icon: category.icon || "Folder",
+      color: category.color || "#06b6d4",
+    });
+    setOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -83,21 +99,35 @@ export function CategoriesSection() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      const { error } = await supabase.from("categories").insert({
-        name: formData.name.trim(),
-        icon: formData.icon,
-        color: formData.color,
-        user_id: user.id,
-      });
+      if (editingCategory) {
+        const { error } = await supabase
+          .from("categories")
+          .update({
+            name: formData.name.trim(),
+            icon: formData.icon,
+            color: formData.color,
+          })
+          .eq("id", editingCategory.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success("Catégorie modifiée avec succès");
+      } else {
+        const { error } = await supabase.from("categories").insert({
+          name: formData.name.trim(),
+          icon: formData.icon,
+          color: formData.color,
+          user_id: user.id,
+        });
 
-      toast.success("Catégorie créée avec succès");
-      setFormData({ name: "", icon: "Folder", color: "#06b6d4" });
+        if (error) throw error;
+        toast.success("Catégorie créée avec succès");
+      }
+
+      resetForm();
       setOpen(false);
       fetchCategories();
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la création");
+      toast.error(error.message || "Erreur lors de l'opération");
     }
   };
 
@@ -125,19 +155,22 @@ export function CategoriesSection() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Catégories</h2>
-          <p className="text-muted-foreground mt-1">Organisez vos éléments par catégories personnalisées</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Catégories</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Organisez vos éléments par catégories personnalisées</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(isOpen) => {
+          setOpen(isOpen);
+          if (!isOpen) resetForm();
+        }}>
           <DialogTrigger asChild>
             <Button className="shadow-vault w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Nouvelle catégorie
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Créer une catégorie</DialogTitle>
+              <DialogTitle>{editingCategory ? "Modifier la catégorie" : "Créer une catégorie"}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -195,7 +228,9 @@ export function CategoriesSection() {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">Créer</Button>
+              <Button type="submit" className="w-full">
+                {editingCategory ? "Modifier" : "Créer"}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -216,13 +251,22 @@ export function CategoriesSection() {
                     style={{ color: category.color || "#06b6d4" }}
                   />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(category.id)}
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditDialog(category)}
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(category.id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <CardTitle className="text-lg truncate">{category.name}</CardTitle>

@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['logo.webp'],
+      includeAssets: ['logo.webp', 'favicon.ico'],
       manifest: {
         name: 'VaultKeep',
         short_name: 'VaultKeep',
@@ -23,14 +23,37 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#0891b2',
         background_color: '#0f172a',
         display: 'standalone',
+        orientation: 'portrait',
+        start_url: '/',
+        scope: '/',
         icons: [
+          {
+            src: '/logo.webp',
+            sizes: '192x192',
+            type: 'image/webp'
+          },
+          {
+            src: '/logo.webp',
+            sizes: '512x512',
+            type: 'image/webp'
+          },
           {
             src: '/logo.webp',
             sizes: '512x512',
             type: 'image/webp',
-            purpose: 'any maskable'
+            purpose: 'maskable'
           }
-        ]
+        ],
+        screenshots: [
+          {
+            src: '/logo.webp',
+            sizes: '512x512',
+            type: 'image/webp',
+            form_factor: 'narrow',
+            label: 'VaultKeep - Coffre-fort digital'
+          }
+        ],
+        categories: ['productivity', 'utilities']
       },
       workbox: {
         cleanupOutdatedCaches: true,

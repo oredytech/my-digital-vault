@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Lightbulb, Sparkles, Trash2, Loader2, Grid3x3, List, Tag } from "lucide-react";
+import { Plus, Lightbulb, Sparkles, Trash2, Loader2, Grid3x3, List, Tag, Pencil } from "lucide-react";
 
 interface Idea {
   id: string;
@@ -31,6 +31,7 @@ export function IdeasSection() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
   const [generatingSuggestions, setGeneratingSuggestions] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [formData, setFormData] = useState({
@@ -74,10 +75,24 @@ export function IdeasSection() {
     }
   };
 
+  const resetForm = () => {
+    setFormData({ title: "", content: "", category_id: "" });
+    setEditingIdea(null);
+  };
+
+  const openEditDialog = (idea: Idea) => {
+    setEditingIdea(idea);
+    setFormData({
+      title: idea.title,
+      content: idea.content,
+      category_id: idea.category_id || "",
+    });
+    setOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!formData.title.trim() || formData.title.length > 200) {
       toast.error("Le titre doit contenir entre 1 et 200 caractères");
       return;
@@ -92,21 +107,35 @@ export function IdeasSection() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Non authentifié");
 
-      const { error } = await supabase.from("ideas").insert({
-        title: formData.title.trim(),
-        content: formData.content.trim(),
-        category_id: formData.category_id || null,
-        user_id: user.id,
-      });
+      if (editingIdea) {
+        const { error } = await supabase
+          .from("ideas")
+          .update({
+            title: formData.title.trim(),
+            content: formData.content.trim(),
+            category_id: formData.category_id || null,
+          })
+          .eq("id", editingIdea.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success("Idée modifiée avec succès");
+      } else {
+        const { error } = await supabase.from("ideas").insert({
+          title: formData.title.trim(),
+          content: formData.content.trim(),
+          category_id: formData.category_id || null,
+          user_id: user.id,
+        });
 
-      toast.success("Idée ajoutée avec succès");
-      setFormData({ title: "", content: "", category_id: "" });
+        if (error) throw error;
+        toast.success("Idée ajoutée avec succès");
+      }
+
+      resetForm();
       setOpen(false);
       fetchIdeas();
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'ajout de l'idée");
+      toast.error(error.message || "Erreur lors de l'opération");
     }
   };
 
@@ -159,8 +188,8 @@ export function IdeasSection() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Mes Idées</h2>
-          <p className="text-muted-foreground mt-1">Capturez vos idées et enrichissez-les avec l'IA</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mes Idées</h2>
+          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Capturez vos idées et enrichissez-les avec l'IA</p>
         </div>
         <div className="flex gap-2">
           <div className="flex items-center border rounded-lg p-1 bg-muted/30">
@@ -181,16 +210,19 @@ export function IdeasSection() {
               <List className="w-4 h-4" />
             </Button>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
+          <Dialog open={open} onOpenChange={(isOpen) => {
+            setOpen(isOpen);
+            if (!isOpen) resetForm();
+          }}>
             <DialogTrigger asChild>
-              <Button className="shadow-vault w-full sm:w-auto">
+              <Button className="shadow-vault flex-1 sm:flex-none">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouvelle idée
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Ajouter une idée</DialogTitle>
+                <DialogTitle>{editingIdea ? "Modifier l'idée" : "Ajouter une idée"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -232,14 +264,16 @@ export function IdeasSection() {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">Ajouter</Button>
+                <Button type="submit" className="w-full">
+                  {editingIdea ? "Modifier" : "Ajouter"}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2" : "space-y-3"}>
+      <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2" : "space-y-3"}>
         {ideas.map((idea) => {
           const category = getCategoryForIdea(idea.category_id);
           return (
@@ -261,14 +295,22 @@ export function IdeasSection() {
                     )}
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handleDelete(idea.id)}
-                  className="flex-shrink-0"
-                >
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEditDialog(idea)}
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(idea.id)}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground line-clamp-3">{idea.content}</p>

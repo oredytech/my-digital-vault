@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { Plus, Users, Eye, EyeOff, Trash2, Mail, Lock, Phone, Grid3x3, List, Calendar as CalendarIcon, Tag, Pencil } from "lucide-react";
-import { format, differenceInMonths, addMonths } from "date-fns";
+import { Plus, Users, Eye, EyeOff, Trash2, Mail, Lock, Phone, Grid3x3, List, Calendar as CalendarIcon, Tag, Pencil, Clock } from "lucide-react";
+import { format, addMonths, addYears, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useAutoDraft } from "@/hooks/useAutoDraft";
 
 interface Account {
   id: string;
@@ -38,6 +39,16 @@ interface Category {
   color: string | null;
 }
 
+const DURATION_OPTIONS = [
+  { value: "1", label: "1 mois" },
+  { value: "2", label: "2 mois" },
+  { value: "3", label: "3 mois" },
+  { value: "6", label: "6 mois" },
+  { value: "12", label: "1 an" },
+  { value: "24", label: "2 ans" },
+  { value: "36", label: "3 ans" },
+];
+
 export function AccountsSection() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -47,7 +58,7 @@ export function AccountsSection() {
   const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [selectedDuration, setSelectedDuration] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     website_url: "",
@@ -61,18 +72,40 @@ export function AccountsSection() {
     category_id: "",
   });
 
+  const { loadDraft, clearDraft } = useAutoDraft(
+    { ...formData, startDate: startDate?.toISOString(), selectedDuration },
+    "account-draft",
+    15000
+  );
+
   useEffect(() => {
     fetchAccounts();
     fetchCategories();
+    
+    // Load draft on mount
+    const draft = loadDraft();
+    if (draft && !editingAccount) {
+      setFormData({
+        name: draft.name || "",
+        website_url: draft.website_url || "",
+        username: draft.username || "",
+        email: draft.email || "",
+        password_encrypted: draft.password_encrypted || "",
+        cpanel_url: draft.cpanel_url || "",
+        hosting_provider: draft.hosting_provider || "",
+        notes: draft.notes || "",
+        phone: draft.phone || "",
+        category_id: draft.category_id || "",
+      });
+      if (draft.startDate) setStartDate(new Date(draft.startDate));
+      if (draft.selectedDuration) setSelectedDuration(draft.selectedDuration);
+    }
   }, []);
 
-  // Calculate duration when dates change
-  useEffect(() => {
-    if (startDate && endDate && endDate > startDate) {
-      const months = differenceInMonths(endDate, startDate);
-      // Duration will be calculated and stored
-    }
-  }, [startDate, endDate]);
+  // Calculate expiration date when date or duration changes
+  const expirationDate = startDate && selectedDuration
+    ? addMonths(startDate, parseInt(selectedDuration))
+    : null;
 
   const fetchCategories = async () => {
     try {
@@ -118,8 +151,9 @@ export function AccountsSection() {
       category_id: "",
     });
     setStartDate(undefined);
-    setEndDate(undefined);
+    setSelectedDuration("");
     setEditingAccount(null);
+    clearDraft();
   };
 
   const openEditDialog = (account: Account) => {
@@ -137,15 +171,30 @@ export function AccountsSection() {
       category_id: account.category_id || "",
     });
     
-    // Set dates based on created_at and duration
     const createdDate = new Date(account.created_at);
     setStartDate(createdDate);
     if (account.duration_months) {
-      setEndDate(addMonths(createdDate, account.duration_months));
+      setSelectedDuration(account.duration_months.toString());
     } else {
-      setEndDate(undefined);
+      setSelectedDuration("");
     }
     setOpen(true);
+  };
+
+  const createAutoReminder = async (accountId: string, accountName: string, expDate: Date, userId: string) => {
+    const reminderDate = addMonths(expDate, -1); // 1 month before expiration
+    
+    // Only create reminder if it's in the future
+    if (isBefore(new Date(), reminderDate)) {
+      await supabase.from("reminders").insert({
+        user_id: userId,
+        title: `Expiration: ${accountName}`,
+        description: `Le compte "${accountName}" expire le ${format(expDate, "dd/MM/yyyy", { locale: fr })}`,
+        remind_at: reminderDate.toISOString(),
+        related_type: "account",
+        related_id: accountId,
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,12 +215,7 @@ export function AccountsSection() {
       return;
     }
 
-    // Calculate duration in months from dates
-    let durationMonths: number | null = null;
-    if (startDate && endDate && endDate > startDate) {
-      durationMonths = differenceInMonths(endDate, startDate);
-      if (durationMonths < 1) durationMonths = 1; // Minimum 1 month
-    }
+    const durationMonths = selectedDuration ? parseInt(selectedDuration) : null;
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -200,16 +244,17 @@ export function AccountsSection() {
         if (error) throw error;
         toast.success("Compte modifié avec succès");
       } else {
-        const { error } = await supabase.from("accounts").insert({
+        const { data: newAccount, error } = await supabase.from("accounts").insert({
           ...accountData,
           user_id: user.id,
-        });
+        }).select().single();
 
         if (error) throw error;
 
-        // Trigger reminder creation if duration is set
-        if (durationMonths) {
-          await supabase.rpc('create_account_expiration_reminder');
+        // Auto-create reminder if duration is set
+        if (startDate && durationMonths && newAccount) {
+          const expDate = addMonths(startDate, durationMonths);
+          await createAutoReminder(newAccount.id, accountData.name, expDate, user.id);
         }
 
         toast.success("Compte ajouté avec succès");
@@ -248,6 +293,18 @@ export function AccountsSection() {
 
   const getCategoryForAccount = (categoryId: string | null) => {
     return categories.find(c => c.id === categoryId);
+  };
+
+  const getAccountExpiration = (account: Account) => {
+    if (!account.duration_months) return null;
+    const created = new Date(account.created_at);
+    return addMonths(created, account.duration_months);
+  };
+
+  const isExpiringSoon = (expDate: Date | null) => {
+    if (!expDate) return false;
+    const oneMonthFromNow = addMonths(new Date(), 1);
+    return isBefore(expDate, oneMonthFromNow);
   };
 
   if (loading) {
@@ -386,7 +443,7 @@ export function AccountsSection() {
                   />
                 </div>
                 
-                {/* Date Selection */}
+                {/* Date and Duration Selection */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Date de création</Label>
@@ -415,37 +472,35 @@ export function AccountsSection() {
                     </Popover>
                   </div>
                   <div className="space-y-2">
-                    <Label>Date d'expiration</Label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-start text-left font-normal",
-                            !endDate && "text-muted-foreground"
-                          )}
-                        >
-                          <CalendarIcon className="mr-2 h-4 w-4" />
-                          {endDate ? format(endDate, "dd/MM/yyyy") : "Sélectionner"}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={endDate}
-                          onSelect={setEndDate}
-                          locale={fr}
-                          disabled={(date) => startDate ? date <= startDate : false}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <Label>Durée</Label>
+                    <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Durée" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DURATION_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                {startDate && endDate && endDate > startDate && (
-                  <p className="text-xs text-muted-foreground">
-                    Durée: {differenceInMonths(endDate, startDate) || 1} mois - Un rappel sera créé 1 mois avant l'expiration
-                  </p>
+                
+                {expirationDate && (
+                  <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <span className="font-medium">Date d'expiration:</span>
+                      <span className="text-primary font-semibold">
+                        {format(expirationDate, "dd MMMM yyyy", { locale: fr })}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Un rappel sera créé automatiquement 1 mois avant l'expiration
+                    </p>
+                  </div>
                 )}
 
                 <div className="space-y-2">
@@ -469,13 +524,15 @@ export function AccountsSection() {
 
       <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "space-y-3"}>
         {accounts.map((account) => {
-          const expirationDate = account.duration_months 
-            ? new Date(new Date(account.created_at).getTime() + account.duration_months * 30 * 24 * 60 * 60 * 1000)
-            : null;
+          const expDate = getAccountExpiration(account);
+          const expiring = isExpiringSoon(expDate);
           const category = getCategoryForAccount(account.category_id);
           
           return (
-            <Card key={account.id} className="hover:shadow-vault transition-shadow">
+            <Card key={account.id} className={cn(
+              "hover:shadow-vault transition-shadow",
+              expiring && "border-destructive/50"
+            )}>
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
                 <div className="flex items-start space-x-3 flex-1 min-w-0">
                   <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -483,9 +540,6 @@ export function AccountsSection() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <CardTitle className="text-lg truncate">{account.name}</CardTitle>
-                    {account.hosting_provider && (
-                      <p className="text-xs text-muted-foreground mt-1">{account.hosting_provider}</p>
-                    )}
                     {category && (
                       <div className="flex items-center mt-1">
                         <Tag className="w-3 h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />
@@ -497,18 +551,10 @@ export function AccountsSection() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditDialog(account)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => openEditDialog(account)}>
                     <Pencil className="w-4 h-4 text-muted-foreground" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(account.id)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => handleDelete(account.id)}>
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                 </div>
@@ -516,50 +562,50 @@ export function AccountsSection() {
               <CardContent className="space-y-3">
                 {account.email && (
                   <div className="flex items-center text-sm">
-                    <Mail className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
+                    <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
                     <span className="truncate">{account.email}</span>
+                  </div>
+                )}
+                {account.username && (
+                  <div className="flex items-center text-sm">
+                    <Users className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <span className="truncate">{account.username}</span>
+                  </div>
+                )}
+                {account.password_encrypted && (
+                  <div className="flex items-center text-sm">
+                    <Lock className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <span className="font-mono flex-1 truncate">
+                      {visiblePasswords.has(account.id) ? account.password_encrypted : "••••••••"}
+                    </span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => togglePasswordVisibility(account.id)}>
+                      {visiblePasswords.has(account.id) ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
                   </div>
                 )}
                 {account.phone && (
                   <div className="flex items-center text-sm">
-                    <Phone className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                    <span className="truncate">{account.phone}</span>
+                    <Phone className="w-4 h-4 mr-2 text-muted-foreground" />
+                    <span>{account.phone}</span>
                   </div>
                 )}
-                {account.password_encrypted && (
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center flex-1 min-w-0">
-                      <Lock className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                      <span className="font-mono truncate">
-                        {visiblePasswords.has(account.id) ? account.password_encrypted : "••••••••"}
-                      </span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => togglePasswordVisibility(account.id)}
-                      className="flex-shrink-0 ml-2"
-                    >
-                      {visiblePasswords.has(account.id) ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </Button>
-                  </div>
-                )}
-                {expirationDate && (
-                  <div className="flex items-center text-sm pt-2 border-t">
-                    <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
-                    <span className="text-muted-foreground">
-                      Expire le {format(expirationDate, "dd MMMM yyyy", { locale: fr })}
+                
+                {/* Expiration Date Display */}
+                {expDate && (
+                  <div className={cn(
+                    "flex items-center text-sm pt-2 border-t border-border/50",
+                    expiring ? "text-destructive" : "text-muted-foreground"
+                  )}>
+                    <Clock className="w-4 h-4 mr-2" />
+                    <span className="font-medium">
+                      Expire le {format(expDate, "dd/MM/yyyy", { locale: fr })}
                     </span>
+                    {expiring && (
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-destructive/10 text-destructive rounded">
+                        Bientôt
+                      </span>
+                    )}
                   </div>
-                )}
-                {account.notes && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 pt-2 border-t">
-                    {account.notes}
-                  </p>
                 )}
               </CardContent>
             </Card>
@@ -571,7 +617,7 @@ export function AccountsSection() {
         <div className="text-center py-12">
           <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">Aucun compte enregistré</p>
-          <p className="text-sm text-muted-foreground mt-1">Ajoutez vos premiers comptes et mots de passe</p>
+          <p className="text-sm text-muted-foreground mt-1">Commencez par ajouter votre premier compte</p>
         </div>
       )}
     </div>

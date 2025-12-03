@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Link2, ExternalLink, Trash2, Grid3x3, List, Tag, Pencil } from "lucide-react";
+import { useAutoDraft } from "@/hooks/useAutoDraft";
 
 interface Link {
   id: string;
@@ -40,9 +41,22 @@ export function LinksSection() {
     category_id: "",
   });
 
+  const { loadDraft, clearDraft } = useAutoDraft(formData, "link-draft", 15000);
+
   useEffect(() => {
     fetchLinks();
     fetchCategories();
+    
+    // Load draft on mount
+    const draft = loadDraft();
+    if (draft && !editingLink) {
+      setFormData({
+        title: draft.title || "",
+        url: draft.url || "",
+        description: draft.description || "",
+        category_id: draft.category_id || "",
+      });
+    }
   }, []);
 
   const fetchCategories = async () => {
@@ -78,6 +92,7 @@ export function LinksSection() {
   const resetForm = () => {
     setFormData({ title: "", url: "", description: "", category_id: "" });
     setEditingLink(null);
+    clearDraft();
   };
 
   const openEditDialog = (link: Link) => {
@@ -174,12 +189,12 @@ export function LinksSection() {
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">Organisez et accédez rapidement à vos liens importants</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex items-center border rounded-lg p-1 bg-muted/30">
+          <div className="flex items-center border rounded-xl p-1 bg-muted/30">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
               size="icon"
               onClick={() => setViewMode("grid")}
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg"
             >
               <Grid3x3 className="w-4 h-4" />
             </Button>
@@ -187,7 +202,7 @@ export function LinksSection() {
               variant={viewMode === "list" ? "secondary" : "ghost"}
               size="icon"
               onClick={() => setViewMode("list")}
-              className="h-8 w-8"
+              className="h-8 w-8 rounded-lg"
             >
               <List className="w-4 h-4" />
             </Button>
@@ -197,7 +212,7 @@ export function LinksSection() {
             if (!isOpen) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button className="shadow-vault flex-1 sm:flex-none">
+              <Button className="shadow-vault flex-1 sm:flex-none rounded-xl">
                 <Plus className="w-4 h-4 mr-2" />
                 Nouveau lien
               </Button>
@@ -215,6 +230,7 @@ export function LinksSection() {
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     maxLength={200}
                     required
+                    className="rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
@@ -226,6 +242,7 @@ export function LinksSection() {
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                     maxLength={2048}
                     required
+                    className="rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
@@ -234,7 +251,7 @@ export function LinksSection() {
                     value={formData.category_id}
                     onValueChange={(value) => setFormData({ ...formData, category_id: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="rounded-xl">
                       <SelectValue placeholder="Sélectionner une catégorie" />
                     </SelectTrigger>
                     <SelectContent>
@@ -254,9 +271,13 @@ export function LinksSection() {
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     maxLength={1000}
                     rows={3}
+                    className="rounded-xl"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Brouillon auto-sauvegardé après 15 secondes
+                  </p>
                 </div>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full rounded-xl">
                   {editingLink ? "Modifier" : "Ajouter"}
                 </Button>
               </form>
@@ -269,10 +290,10 @@ export function LinksSection() {
         {links.map((link) => {
           const category = getCategoryForLink(link.category_id);
           return (
-            <Card key={link.id} className="hover:shadow-vault transition-shadow">
+            <Card key={link.id} className="hover:shadow-vault transition-shadow rounded-xl">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                 <div className="flex items-start space-x-3 flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Link2 className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -292,6 +313,7 @@ export function LinksSection() {
                     variant="ghost"
                     size="icon"
                     onClick={() => openEditDialog(link)}
+                    className="rounded-lg"
                   >
                     <Pencil className="w-4 h-4 text-muted-foreground" />
                   </Button>
@@ -299,6 +321,7 @@ export function LinksSection() {
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDelete(link.id)}
+                    className="rounded-lg"
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>

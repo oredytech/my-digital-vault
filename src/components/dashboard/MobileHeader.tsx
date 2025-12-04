@@ -2,6 +2,7 @@ import { LogOut, Moon, Sun, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
+import { NotificationButton } from "./NotificationButton";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -74,6 +75,7 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
               <Download className="w-5 h-5" />
             </Button>
           )}
+          <NotificationButton variant="icon" />
           <Button
             variant="ghost"
             size="icon"

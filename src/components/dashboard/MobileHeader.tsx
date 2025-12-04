@@ -1,6 +1,12 @@
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
 
 interface MobileHeaderProps {
   onSignOut: () => void;
@@ -8,9 +14,42 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ onSignOut }: MobileHeaderProps) {
   const { theme, setTheme } = useTheme();
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      setIsInstalled(true);
+      return;
+    }
+
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    setDeferredPrompt(null);
+  };
 
   return (
-    <header className="sticky top-0 bg-sidebar border-b border-sidebar-border z-40 lg:hidden safe-area-top">
+    <header className="sticky top-0 bg-sidebar border-b border-sidebar-border z-40 lg:hidden safe-area-top rounded-b-2xl">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center space-x-3">
           <img 
@@ -23,7 +62,18 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
             <p className="text-[10px] text-muted-foreground">Coffre-fort digital</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
+          {!isInstalled && deferredPrompt && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleInstall}
+              className="text-primary"
+              title="Installer l'app"
+            >
+              <Download className="w-5 h-5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"

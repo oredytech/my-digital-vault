@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
+import { NotificationButton } from "./NotificationButton";
 
 type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories";
 
@@ -114,6 +115,7 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
               Installer l'app
             </Button>
           )}
+          <NotificationButton variant="full" />
           <Button
             variant="ghost"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

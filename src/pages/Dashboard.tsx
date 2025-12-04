@@ -10,15 +10,17 @@ import { AccountsSection } from "@/components/dashboard/AccountsSection";
 import { IdeasSection } from "@/components/dashboard/IdeasSection";
 import { RemindersSection } from "@/components/dashboard/RemindersSection";
 import { CategoriesSection } from "@/components/dashboard/CategoriesSection";
+import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
+import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { toast } from "sonner";
 
-type ActiveSection = "links" | "accounts" | "ideas" | "reminders" | "categories";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<ActiveSection>("links");
+  const [activeSection, setActiveSection] = useState<ActiveSection>("stats");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -76,8 +78,9 @@ const Dashboard = () => {
         />
         
         {/* Main Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 pb-24 lg:pb-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 pb-24 lg:pb-8 pt-20 lg:pt-8">
           <div className="max-w-7xl mx-auto">
+            {activeSection === "stats" && <StatisticsSection />}
             {activeSection === "links" && <LinksSection />}
             {activeSection === "accounts" && <AccountsSection />}
             {activeSection === "ideas" && <IdeasSection />}
@@ -92,6 +95,9 @@ const Dashboard = () => {
         activeSection={activeSection} 
         onSectionChange={setActiveSection} 
       />
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 };

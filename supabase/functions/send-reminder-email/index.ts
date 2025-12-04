@@ -31,27 +31,45 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { reminderId }: ReminderEmailRequest = await req.json();
 
-    // Get reminder details
+    console.log("Fetching reminder with id:", reminderId);
+
+    // Get reminder details (without join)
     const { data: reminder, error: reminderError } = await supabaseClient
       .from("reminders")
-      .select("*, accounts(*)")
+      .select("*")
       .eq("id", reminderId)
       .single();
 
-    if (reminderError) throw reminderError;
+    if (reminderError) {
+      console.error("Error fetching reminder:", reminderError);
+      throw reminderError;
+    }
 
-    // Get user profile with email
-    const { data: profile, error: profileError } = await supabaseClient
-      .from("profiles")
-      .select("*")
-      .eq("id", reminder.user_id)
-      .single();
+    console.log("Reminder fetched:", reminder);
 
-    if (profileError) throw profileError;
+    // If related to an account, fetch account details separately
+    let accountData = null;
+    if (reminder.related_type === "account" && reminder.related_id) {
+      const { data: account, error: accountError } = await supabaseClient
+        .from("accounts")
+        .select("name, email, phone")
+        .eq("id", reminder.related_id)
+        .single();
+
+      if (!accountError && account) {
+        accountData = account;
+        console.log("Account fetched:", accountData);
+      }
+    }
 
     // Get the user's email from auth
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) throw new Error("User not found");
+    if (userError || !user) {
+      console.error("User error:", userError);
+      throw new Error("User not found");
+    }
+
+    console.log("Sending email to:", user.email);
 
     const emailResponse = await resend.emails.send({
       from: "VaultKeep <onboarding@resend.dev>",
@@ -87,20 +105,20 @@ const handler = async (req: Request): Promise<Response> => {
                 })}</strong>
               </p>
               
-              ${reminder.accounts ? `
+              ${accountData ? `
                 <div style="margin-top: 15px; padding: 15px; background-color: #0f172a; border-radius: 8px;">
                   <p style="color: #06b6d4; font-size: 14px; font-weight: 600; margin-bottom: 8px;">Compte associé:</p>
                   <p style="color: #e2e8f0; font-size: 14px; margin: 5px 0;">
-                    📌 ${reminder.accounts.name}
+                    📌 ${accountData.name}
                   </p>
-                  ${reminder.accounts.email ? `
+                  ${accountData.email ? `
                     <p style="color: #94a3b8; font-size: 13px; margin: 5px 0;">
-                      ✉️ ${reminder.accounts.email}
+                      ✉️ ${accountData.email}
                     </p>
                   ` : ''}
-                  ${reminder.accounts.phone ? `
+                  ${accountData.phone ? `
                     <p style="color: #94a3b8; font-size: 13px; margin: 5px 0;">
-                      📱 ${reminder.accounts.phone}
+                      📱 ${accountData.phone}
                     </p>
                   ` : ''}
                 </div>

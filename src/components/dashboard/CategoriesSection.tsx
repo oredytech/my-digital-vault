@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Tag, Trash2, Folder, Star, Briefcase, Home, Heart, Code, Book, Pencil } from "lucide-react";
+import { Plus, Tag, Trash2, Folder, Star, Briefcase, Home, Heart, Code, Book, Pencil, AlertTriangle, Link2, Users, Lightbulb } from "lucide-react";
 
 interface Category {
   id: string;
@@ -14,6 +15,12 @@ interface Category {
   icon: string | null;
   color: string | null;
   created_at: string;
+}
+
+interface CategoryCounts {
+  links: number;
+  accounts: number;
+  ideas: number;
 }
 
 const iconOptions = [
@@ -38,8 +45,12 @@ const colorOptions = [
 
 export function CategoriesSection() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, CategoryCounts>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [targetCategoryId, setTargetCategoryId] = useState<string>("");
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -60,11 +71,34 @@ export function CategoriesSection() {
 
       if (error) throw error;
       setCategories(data || []);
+      
+      // Fetch counts for each category
+      await fetchCategoryCounts(data || []);
     } catch (error) {
       toast.error("Erreur lors du chargement des catégories");
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchCategoryCounts = async (cats: Category[]) => {
+    const counts: Record<string, CategoryCounts> = {};
+    
+    for (const cat of cats) {
+      const [linksResult, accountsResult, ideasResult] = await Promise.all([
+        supabase.from("links").select("id", { count: "exact" }).eq("category_id", cat.id),
+        supabase.from("accounts").select("id", { count: "exact" }).eq("category_id", cat.id),
+        supabase.from("ideas").select("id", { count: "exact" }).eq("category_id", cat.id),
+      ]);
+      
+      counts[cat.id] = {
+        links: linksResult.count || 0,
+        accounts: accountsResult.count || 0,
+        ideas: ideasResult.count || 0,
+      };
+    }
+    
+    setCategoryCounts(counts);
   };
 
   const resetForm = () => {
@@ -80,6 +114,18 @@ export function CategoriesSection() {
       color: category.color || "#06b6d4",
     });
     setOpen(true);
+  };
+
+  const openDeleteDialog = (category: Category) => {
+    setCategoryToDelete(category);
+    setTargetCategoryId("");
+    setDeleteDialogOpen(true);
+  };
+
+  const getTotalItems = (categoryId: string) => {
+    const counts = categoryCounts[categoryId];
+    if (!counts) return 0;
+    return counts.links + counts.accounts + counts.ideas;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,11 +177,29 @@ export function CategoriesSection() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async () => {
+    if (!categoryToDelete) return;
+    
+    const totalItems = getTotalItems(categoryToDelete.id);
+    
     try {
-      const { error } = await supabase.from("categories").delete().eq("id", id);
+      // Transfer items to new category if selected
+      if (targetCategoryId && totalItems > 0) {
+        const newCategoryId = targetCategoryId === "none" ? null : targetCategoryId;
+        
+        await Promise.all([
+          supabase.from("links").update({ category_id: newCategoryId }).eq("category_id", categoryToDelete.id),
+          supabase.from("accounts").update({ category_id: newCategoryId }).eq("category_id", categoryToDelete.id),
+          supabase.from("ideas").update({ category_id: newCategoryId }).eq("category_id", categoryToDelete.id),
+        ]);
+      }
+      
+      const { error } = await supabase.from("categories").delete().eq("id", categoryToDelete.id);
       if (error) throw error;
+      
       toast.success("Catégorie supprimée");
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
       fetchCategories();
     } catch (error) {
       toast.error("Erreur lors de la suppression");
@@ -239,6 +303,9 @@ export function CategoriesSection() {
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {categories.map((category) => {
           const IconComponent = getIconComponent(category.icon || "Tag");
+          const counts = categoryCounts[category.id] || { links: 0, accounts: 0, ideas: 0 };
+          const total = counts.links + counts.accounts + counts.ideas;
+          
           return (
             <Card key={category.id} className="hover:shadow-vault transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -262,7 +329,7 @@ export function CategoriesSection() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDelete(category.id)}
+                    onClick={() => openDeleteDialog(category)}
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
@@ -270,6 +337,21 @@ export function CategoriesSection() {
               </CardHeader>
               <CardContent>
                 <CardTitle className="text-lg truncate">{category.name}</CardTitle>
+                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Link2 className="w-3 h-3" />
+                    <span>{counts.links}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="w-3 h-3" />
+                    <span>{counts.accounts}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Lightbulb className="w-3 h-3" />
+                    <span>{counts.ideas}</span>
+                  </div>
+                  <span className="ml-auto font-medium text-foreground">{total} éléments</span>
+                </div>
               </CardContent>
             </Card>
           );
@@ -283,6 +365,86 @@ export function CategoriesSection() {
           <p className="text-sm text-muted-foreground mt-1">Créez votre première catégorie pour organiser vos éléments</p>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Supprimer la catégorie
+            </DialogTitle>
+            <DialogDescription>
+              {categoryToDelete && (
+                <>
+                  La catégorie "{categoryToDelete.name}" contient <strong>{getTotalItems(categoryToDelete.id)} éléments</strong>.
+                  {getTotalItems(categoryToDelete.id) > 0 && (
+                    <div className="mt-2 p-3 bg-muted rounded-lg text-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Link2 className="w-4 h-4" />
+                        {categoryCounts[categoryToDelete.id]?.links || 0} liens
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-4 h-4" />
+                        {categoryCounts[categoryToDelete.id]?.accounts || 0} comptes
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="w-4 h-4" />
+                        {categoryCounts[categoryToDelete.id]?.ideas || 0} idées
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {categoryToDelete && getTotalItems(categoryToDelete.id) > 0 && (
+            <div className="space-y-2">
+              <Label>Transférer les éléments vers :</Label>
+              <Select value={targetCategoryId} onValueChange={setTargetCategoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une catégorie ou laisser sans catégorie" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sans catégorie</SelectItem>
+                  {categories
+                    .filter(c => c.id !== categoryToDelete.id)
+                    .map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Vous pouvez aussi renommer cette catégorie au lieu de la supprimer.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Annuler
+            </Button>
+            {categoryToDelete && getTotalItems(categoryToDelete.id) > 0 && (
+              <Button variant="secondary" onClick={() => {
+                setDeleteDialogOpen(false);
+                openEditDialog(categoryToDelete);
+              }}>
+                Renommer
+              </Button>
+            )}
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              disabled={categoryToDelete && getTotalItems(categoryToDelete.id) > 0 && !targetCategoryId}
+            >
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

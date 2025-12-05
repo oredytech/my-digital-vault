@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Plus, Link2, ExternalLink, Trash2, Grid3x3, List, Tag, Pencil } from "lucide-react";
+import { Plus, Link2, ExternalLink, Trash2, Grid3x3, List, Tag, Pencil, Filter, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
 
 interface Link {
@@ -34,6 +35,7 @@ export function LinksSection() {
   const [open, setOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<Link | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
   const [formData, setFormData] = useState({
     title: "",
     url: "",
@@ -47,7 +49,6 @@ export function LinksSection() {
     fetchLinks();
     fetchCategories();
     
-    // Load draft on mount
     const draft = loadDraft();
     if (draft && !editingLink) {
       setFormData({
@@ -177,6 +178,99 @@ export function LinksSection() {
     return categories.find(c => c.id === categoryId);
   };
 
+  const filteredLinks = filterCategory === "all" 
+    ? links 
+    : filterCategory === "uncategorized"
+      ? links.filter(l => !l.category_id)
+      : links.filter(l => l.category_id === filterCategory);
+
+  const exportToCSV = () => {
+    const headers = ["Titre", "URL", "Description", "Catégorie", "Date de création"];
+    const rows = filteredLinks.map(link => {
+      const category = getCategoryForLink(link.category_id);
+      return [
+        link.title,
+        link.url,
+        link.description || "",
+        category?.name || "Sans catégorie",
+        new Date(link.created_at).toLocaleDateString("fr-FR"),
+      ];
+    });
+
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `liens_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Export CSV réussi");
+  };
+
+  const exportToPDF = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Veuillez autoriser les popups pour exporter en PDF");
+      return;
+    }
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Mes Liens - VaultKeep</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #0891b2; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+          th { background-color: #0891b2; color: white; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          .date { font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <h1>Mes Liens</h1>
+        <p class="date">Exporté le ${new Date().toLocaleDateString("fr-FR")}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Titre</th>
+              <th>URL</th>
+              <th>Description</th>
+              <th>Catégorie</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredLinks.map(link => {
+              const category = getCategoryForLink(link.category_id);
+              return `
+                <tr>
+                  <td>${link.title}</td>
+                  <td><a href="${link.url}">${link.url}</a></td>
+                  <td>${link.description || "-"}</td>
+                  <td>${category?.name || "Sans catégorie"}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.onload = () => {
+      printWindow.print();
+    };
+    toast.success("Ouverture de l'impression PDF");
+  };
+
   if (loading) {
     return <div className="text-center py-8">Chargement...</div>;
   }
@@ -188,7 +282,40 @@ export function LinksSection() {
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mes Liens</h2>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">Organisez et accédez rapidement à vos liens importants</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-[180px] rounded-xl">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filtrer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les catégories</SelectItem>
+              <SelectItem value="uncategorized">Sans catégorie</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="rounded-xl">
+                <Download className="w-4 h-4 mr-2" />
+                Exporter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={exportToCSV}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Exporter en CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportToPDF}>
+                <FileText className="w-4 h-4 mr-2" />
+                Exporter en PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <div className="flex items-center border rounded-xl p-1 bg-muted/30">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -287,7 +414,7 @@ export function LinksSection() {
       </div>
 
       <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
-        {links.map((link) => {
+        {filteredLinks.map((link) => {
           const category = getCategoryForLink(link.category_id);
           return (
             <Card key={link.id} className="hover:shadow-vault transition-shadow rounded-xl">
@@ -348,10 +475,12 @@ export function LinksSection() {
         })}
       </div>
 
-      {links.length === 0 && (
+      {filteredLinks.length === 0 && (
         <div className="text-center py-12">
           <Link2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Aucun lien enregistré</p>
+          <p className="text-muted-foreground">
+            {filterCategory !== "all" ? "Aucun lien dans cette catégorie" : "Aucun lien enregistré"}
+          </p>
           <p className="text-sm text-muted-foreground mt-1">Commencez par ajouter votre premier lien</p>
         </div>
       )}

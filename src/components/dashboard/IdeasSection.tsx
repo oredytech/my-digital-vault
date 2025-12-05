@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Lightbulb, Sparkles, Trash2, Loader2, Grid3x3, List, Tag, Pencil } from "lucide-react";
+import { Plus, Lightbulb, Sparkles, Trash2, Loader2, Grid3x3, List, Tag, Pencil, Filter, RefreshCw } from "lucide-react";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
 
 interface Idea {
@@ -35,6 +35,9 @@ export function IdeasSection() {
   const [editingIdea, setEditingIdea] = useState<Idea | null>(null);
   const [generatingSuggestions, setGeneratingSuggestions] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [editingSuggestionId, setEditingSuggestionId] = useState<string | null>(null);
+  const [editedSuggestion, setEditedSuggestion] = useState<string>("");
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -47,7 +50,6 @@ export function IdeasSection() {
     fetchIdeas();
     fetchCategories();
     
-    // Load draft on mount
     const draft = loadDraft();
     if (draft && !editingIdea) {
       setFormData({
@@ -190,9 +192,36 @@ export function IdeasSection() {
     }
   };
 
+  const startEditingSuggestion = (idea: Idea) => {
+    setEditingSuggestionId(idea.id);
+    setEditedSuggestion(idea.ai_suggestions?.suggestions || "");
+  };
+
+  const saveSuggestion = async (ideaId: string) => {
+    try {
+      const { error } = await supabase
+        .from("ideas")
+        .update({ ai_suggestions: { suggestions: editedSuggestion } })
+        .eq("id", ideaId);
+
+      if (error) throw error;
+      toast.success("Suggestions mises à jour");
+      setEditingSuggestionId(null);
+      fetchIdeas();
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
   const getCategoryForIdea = (categoryId: string | null) => {
     return categories.find(c => c.id === categoryId);
   };
+
+  const filteredIdeas = filterCategory === "all" 
+    ? ideas 
+    : filterCategory === "uncategorized"
+      ? ideas.filter(i => !i.category_id)
+      : ideas.filter(i => i.category_id === filterCategory);
 
   if (loading) {
     return <div className="text-center py-8">Chargement...</div>;
@@ -205,7 +234,22 @@ export function IdeasSection() {
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mes Idées</h2>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">Capturez vos idées et enrichissez-les avec l'IA</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="w-[180px] rounded-xl">
+              <Filter className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Filtrer" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes les catégories</SelectItem>
+              <SelectItem value="uncategorized">Sans catégorie</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="flex items-center border rounded-xl p-1 bg-muted/30">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -293,7 +337,7 @@ export function IdeasSection() {
       </div>
 
       <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2" : "space-y-3"}>
-        {ideas.map((idea) => {
+        {filteredIdeas.map((idea) => {
           const category = getCategoryForIdea(idea.category_id);
           return (
             <Card key={idea.id} className="hover:shadow-vault transition-shadow rounded-xl">
@@ -338,13 +382,58 @@ export function IdeasSection() {
                 
                 {idea.ai_suggestions ? (
                   <div className="border-t pt-4">
-                    <div className="flex items-center text-sm font-medium mb-2">
-                      <Sparkles className="w-4 h-4 mr-2 text-primary" />
-                      Suggestions IA
+                    <div className="flex items-center justify-between text-sm font-medium mb-2">
+                      <div className="flex items-center">
+                        <Sparkles className="w-4 h-4 mr-2 text-primary" />
+                        Suggestions IA
+                      </div>
+                      <div className="flex gap-1">
+                        {editingSuggestionId === idea.id ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => saveSuggestion(idea.id)}
+                            className="h-7 px-2"
+                          >
+                            Enregistrer
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => startEditingSuggestion(idea)}
+                            className="h-7 w-7"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => generateSuggestions(idea)}
+                          disabled={generatingSuggestions === idea.id}
+                          className="h-7 w-7"
+                        >
+                          {generatingSuggestions === idea.id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
-                      {idea.ai_suggestions.suggestions}
-                    </p>
+                    {editingSuggestionId === idea.id ? (
+                      <Textarea
+                        value={editedSuggestion}
+                        onChange={(e) => setEditedSuggestion(e.target.value)}
+                        rows={4}
+                        className="text-sm rounded-lg"
+                      />
+                    ) : (
+                      <p className="text-sm text-foreground whitespace-pre-wrap">
+                        {idea.ai_suggestions.suggestions}
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <Button
@@ -373,10 +462,12 @@ export function IdeasSection() {
         })}
       </div>
 
-      {ideas.length === 0 && (
+      {filteredIdeas.length === 0 && (
         <div className="text-center py-12">
           <Lightbulb className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Aucune idée enregistrée</p>
+          <p className="text-muted-foreground">
+            {filterCategory !== "all" ? "Aucune idée dans cette catégorie" : "Aucune idée enregistrée"}
+          </p>
           <p className="text-sm text-muted-foreground mt-1">Commencez à capturer vos idées</p>
         </div>
       )}

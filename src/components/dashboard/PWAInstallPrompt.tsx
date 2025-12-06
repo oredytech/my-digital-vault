@@ -65,31 +65,39 @@ export function PWAInstallPrompt() {
   if (isInstalled || !showPrompt) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 lg:bottom-4 lg:left-auto lg:right-4 lg:w-80 bg-card border border-border rounded-xl shadow-vault p-4 z-50 animate-fade-in">
-      <button
-        onClick={handleDismiss}
-        className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
-      >
-        <X className="w-4 h-4" />
-      </button>
-      
-      <div className="flex items-start gap-3">
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <Download className="w-6 h-6 text-primary" />
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground">Installer VaultKeep</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Installez l'application pour un accès rapide et hors-ligne
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-card border border-border rounded-2xl shadow-vault p-6 w-full max-w-sm animate-fade-in">
+        <button
+          onClick={handleDismiss}
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        
+        <div className="flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+            <Download className="w-8 h-8 text-primary" />
+          </div>
+          <h3 className="text-xl font-semibold text-foreground">Installer VaultKeep</h3>
+          <p className="text-sm text-muted-foreground mt-2 mb-6">
+            Installez l'application pour un accès rapide et hors-ligne sur votre appareil
           </p>
-          <Button
-            onClick={handleInstall}
-            size="sm"
-            className="mt-3 w-full"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Installer
-          </Button>
+          <div className="flex gap-3 w-full">
+            <Button
+              onClick={handleDismiss}
+              variant="outline"
+              className="flex-1"
+            >
+              Plus tard
+            </Button>
+            <Button
+              onClick={handleInstall}
+              className="flex-1"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Installer
+            </Button>
+          </div>
         </div>
       </div>
     </div>

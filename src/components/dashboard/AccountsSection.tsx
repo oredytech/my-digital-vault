@@ -674,61 +674,63 @@ export function AccountsSection() {
 
       {/* Table View */}
       {viewMode === "table" && (
-        <div className="rounded-xl border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Catégorie</TableHead>
-                <TableHead>Expiration</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAccounts.map((account) => {
-                const category = getCategoryForAccount(account.category_id);
-                const expDate = getAccountExpiration(account);
-                const expiring = isExpiringSoon(expDate);
-                
-                return (
-                  <TableRow key={account.id}>
-                    <TableCell className="font-medium">{account.name}</TableCell>
-                    <TableCell>{account.email || "-"}</TableCell>
-                    <TableCell>
-                      {category ? (
-                        <span style={{ color: category.color || '#06b6d4' }}>
-                          {category.name}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {expDate ? (
-                        <span className={expiring ? "text-destructive font-medium" : ""}>
-                          {format(expDate, "dd/MM/yyyy")}
-                        </span>
-                      ) : "-"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => openDetailsDialog(account)}>
-                          <Info className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(account)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(account.id)}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+        <div className="rounded-xl border bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table className="min-w-[600px]">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap">Nom</TableHead>
+                  <TableHead className="whitespace-nowrap">Email</TableHead>
+                  <TableHead className="whitespace-nowrap">Catégorie</TableHead>
+                  <TableHead className="whitespace-nowrap">Expiration</TableHead>
+                  <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAccounts.map((account) => {
+                  const category = getCategoryForAccount(account.category_id);
+                  const expDate = getAccountExpiration(account);
+                  const expiring = isExpiringSoon(expDate);
+                  
+                  return (
+                    <TableRow key={account.id}>
+                      <TableCell className="font-medium whitespace-nowrap max-w-[150px] truncate">{account.name}</TableCell>
+                      <TableCell className="whitespace-nowrap max-w-[180px] truncate">{account.email || "-"}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {category ? (
+                          <span style={{ color: category.color || '#06b6d4' }}>
+                            {category.name}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {expDate ? (
+                          <span className={expiring ? "text-destructive font-medium" : ""}>
+                            {format(expDate, "dd/MM/yyyy")}
+                          </span>
+                        ) : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetailsDialog(account)}>
+                            <Info className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(account)}>
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(account.id)}>
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 

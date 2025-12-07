@@ -12,6 +12,7 @@ import { RemindersSection } from "@/components/dashboard/RemindersSection";
 import { CategoriesSection } from "@/components/dashboard/CategoriesSection";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
+import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
 import { toast } from "sonner";
 
 type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories";
@@ -98,6 +99,9 @@ const Dashboard = () => {
 
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
+
+      {/* Offline Indicator */}
+      <OfflineIndicator />
     </div>
   );
 };

@@ -674,16 +674,16 @@ export function AccountsSection() {
 
       {/* Table View */}
       {viewMode === "table" && (
-        <div className="rounded-xl border bg-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table className="min-w-[600px]">
+        <div className="rounded-xl border bg-card w-full">
+          <div className="overflow-x-auto max-w-full">
+            <Table className="w-full min-w-[700px] table-fixed">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="whitespace-nowrap">Nom</TableHead>
-                  <TableHead className="whitespace-nowrap">Email</TableHead>
-                  <TableHead className="whitespace-nowrap">Catégorie</TableHead>
-                  <TableHead className="whitespace-nowrap">Expiration</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">Actions</TableHead>
+                  <TableHead className="w-[25%]">Nom</TableHead>
+                  <TableHead className="w-[25%]">Email</TableHead>
+                  <TableHead className="w-[15%]">Catégorie</TableHead>
+                  <TableHead className="w-[15%]">Expiration</TableHead>
+                  <TableHead className="w-[20%] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -694,33 +694,37 @@ export function AccountsSection() {
                   
                   return (
                     <TableRow key={account.id}>
-                      <TableCell className="font-medium whitespace-nowrap max-w-[150px] truncate">{account.name}</TableCell>
-                      <TableCell className="whitespace-nowrap max-w-[180px] truncate">{account.email || "-"}</TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell className="font-medium">
+                        <span className="block truncate" title={account.name}>{account.name}</span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="block truncate" title={account.email || "-"}>{account.email || "-"}</span>
+                      </TableCell>
+                      <TableCell>
                         {category ? (
-                          <span style={{ color: category.color || '#06b6d4' }}>
+                          <span className="block truncate" style={{ color: category.color || '#06b6d4' }} title={category.name}>
                             {category.name}
                           </span>
                         ) : (
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap">
+                      <TableCell>
                         {expDate ? (
                           <span className={expiring ? "text-destructive font-medium" : ""}>
                             {format(expDate, "dd/MM/yyyy")}
                           </span>
                         ) : "-"}
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openDetailsDialog(account)}>
+                      <TableCell>
+                        <div className="flex justify-end gap-1 flex-shrink-0">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => openDetailsDialog(account)}>
                             <Info className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(account)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => openEditDialog(account)}>
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(account.id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleDelete(account.id)}>
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>

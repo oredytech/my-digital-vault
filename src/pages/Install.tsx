@@ -118,42 +118,46 @@ export default function Install() {
               </div>
             </CardContent>
           </Card>
-        ) : deferredPrompt ? (
-          <Button 
-            onClick={handleInstall} 
-            className="w-full h-14 text-lg"
-            disabled={isInstalling}
-          >
-            <Download className="w-5 h-5 mr-2" />
-            {isInstalling ? "Installation..." : "Installer maintenant"}
-          </Button>
         ) : (
-          <Card className="border-muted">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Monitor className="w-5 h-5" />
-                Installation manuelle
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Sur iOS (Safari):</p>
-                <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
-                  <li>Appuyez sur le bouton Partager</li>
-                  <li>Sélectionnez "Sur l'écran d'accueil"</li>
-                  <li>Appuyez sur "Ajouter"</li>
-                </ol>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Sur Android (Chrome):</p>
-                <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
-                  <li>Appuyez sur le menu ⋮</li>
-                  <li>Sélectionnez "Installer l'application"</li>
-                  <li>Confirmez l'installation</li>
-                </ol>
-              </div>
-            </CardContent>
-          </Card>
+          <>
+            <Button 
+              onClick={handleInstall} 
+              className="w-full h-14 text-lg"
+              disabled={isInstalling || !deferredPrompt}
+            >
+              <Download className="w-5 h-5 mr-2" />
+              {isInstalling ? "Installation..." : "Installer l'application"}
+            </Button>
+
+            {!deferredPrompt && (
+              <Card className="border-muted">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Monitor className="w-5 h-5" />
+                    Installation manuelle
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Sur iOS (Safari):</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Appuyez sur le bouton Partager</li>
+                      <li>Sélectionnez "Sur l'écran d'accueil"</li>
+                      <li>Appuyez sur "Ajouter"</li>
+                    </ol>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Sur Android (Chrome):</p>
+                    <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                      <li>Appuyez sur le menu ⋮</li>
+                      <li>Sélectionnez "Installer l'application"</li>
+                      <li>Confirmez l'installation</li>
+                    </ol>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
 
         <Button 

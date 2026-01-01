@@ -1,7 +1,7 @@
-import { Link2, Users, Lightbulb, Bell, Tag, BarChart3 } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, Tag, BarChart3, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
 
 interface MobileNavProps {
   activeSection: ActiveSection;
@@ -15,7 +15,7 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
     { id: "accounts" as const, label: "Comptes", icon: Users },
     { id: "ideas" as const, label: "Idées", icon: Lightbulb },
     { id: "reminders" as const, label: "Rappels", icon: Bell },
-    { id: "categories" as const, label: "Catégories", icon: Tag },
+    { id: "trash" as const, label: "Corbeille", icon: Trash2 },
   ];
 
   return (

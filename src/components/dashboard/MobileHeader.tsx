@@ -1,8 +1,10 @@
-import { LogOut, Moon, Sun, Download } from "lucide-react";
+import { LogOut, Moon, Sun, Download, RefreshCw, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { NotificationButton } from "./NotificationButton";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -17,6 +19,7 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
   const { theme, setTheme } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const { isOnline, isSyncing, pendingCount, syncAll } = useLocalDatabase();
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -64,6 +67,35 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
           </div>
         </div>
         <div className="flex items-center space-x-1">
+          {/* Sync Button */}
+          {isOnline && pendingCount > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={syncAll}
+              disabled={isSyncing}
+              className="text-primary relative"
+              title={`${pendingCount} action(s) en attente`}
+            >
+              <RefreshCw className={`w-5 h-5 ${isSyncing ? "animate-spin" : ""}`} />
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+              >
+                {pendingCount}
+              </Badge>
+            </Button>
+          )}
+          {isOnline && pendingCount === 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-green-500"
+              title="Synchronisé"
+            >
+              <Cloud className="w-5 h-5" />
+            </Button>
+          )}
           {!isInstalled && deferredPrompt && (
             <Button
               variant="ghost"

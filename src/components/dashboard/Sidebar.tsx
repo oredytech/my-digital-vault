@@ -1,11 +1,11 @@
-import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { NotificationButton } from "./NotificationButton";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -61,6 +61,7 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
     { id: "ideas" as const, label: "Idées", icon: Lightbulb },
     { id: "reminders" as const, label: "Rappels", icon: Bell },
     { id: "categories" as const, label: "Catégories", icon: Tag },
+    { id: "trash" as const, label: "Corbeille", icon: Trash2 },
   ];
 
   return (

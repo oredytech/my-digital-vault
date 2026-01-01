@@ -17,6 +17,7 @@ import { format, addMonths, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 
 interface Account {
   id: string;
@@ -83,10 +84,16 @@ export function AccountsSection() {
     15000
   );
 
+  const { getData, insertData, updateData, deleteData, isInitialized } = useLocalDatabase();
+
   useEffect(() => {
-    fetchAccounts();
-    fetchCategories();
-    
+    if (isInitialized) {
+      fetchAccounts();
+      fetchCategories();
+    }
+  }, [isInitialized]);
+
+  useEffect(() => {
     const draft = loadDraft();
     if (draft && !editingAccount) {
       setFormData({
@@ -112,13 +119,8 @@ export function AccountsSection() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setCategories(data || []);
+      const data = await getData<Category>("categories");
+      setCategories(data.sort((a, b) => a.name.localeCompare(b.name)));
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -126,13 +128,8 @@ export function AccountsSection() {
 
   const fetchAccounts = async () => {
     try {
-      const { data, error } = await supabase
-        .from("accounts")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setAccounts(data || []);
+      const data = await getData<Account>("accounts");
+      setAccounts(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     } catch (error) {
       toast.error("Erreur lors du chargement des comptes");
     } finally {
@@ -276,9 +273,8 @@ export function AccountsSection() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("accounts").delete().eq("id", id);
-      if (error) throw error;
-      toast.success("Compte supprimé");
+      await deleteData("accounts", id);
+      toast.success("Compte déplacé vers la corbeille");
       fetchAccounts();
     } catch (error) {
       toast.error("Erreur lors de la suppression");

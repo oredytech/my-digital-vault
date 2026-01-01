@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { Plus, Link2, ExternalLink, Trash2, Grid3x3, List, Tag, Pencil, Filter, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 
 interface Link {
   id: string;
@@ -44,11 +44,16 @@ export function LinksSection() {
   });
 
   const { loadDraft, clearDraft } = useAutoDraft(formData, "link-draft", 15000);
+  const { getData, insertData, updateData, deleteData, isInitialized } = useLocalDatabase();
 
   useEffect(() => {
-    fetchLinks();
-    fetchCategories();
-    
+    if (isInitialized) {
+      fetchLinks();
+      fetchCategories();
+    }
+  }, [isInitialized]);
+
+  useEffect(() => {
     const draft = loadDraft();
     if (draft && !editingLink) {
       setFormData({
@@ -62,13 +67,8 @@ export function LinksSection() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setCategories(data || []);
+      const data = await getData<Category>("categories");
+      setCategories(data.sort((a, b) => a.name.localeCompare(b.name)));
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -76,13 +76,8 @@ export function LinksSection() {
 
   const fetchLinks = async () => {
     try {
-      const { data, error } = await supabase
-        .from("links")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setLinks(data || []);
+      const data = await getData<Link>("links");
+      setLinks(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     } catch (error) {
       toast.error("Erreur lors du chargement des liens");
     } finally {
@@ -126,32 +121,18 @@ export function LinksSection() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      const linkData = {
+        title: formData.title.trim(),
+        url: formData.url.trim(),
+        description: formData.description.trim() || null,
+        category_id: formData.category_id || null,
+      };
 
       if (editingLink) {
-        const { error } = await supabase
-          .from("links")
-          .update({
-            title: formData.title.trim(),
-            url: formData.url.trim(),
-            description: formData.description.trim() || null,
-            category_id: formData.category_id || null,
-          })
-          .eq("id", editingLink.id);
-
-        if (error) throw error;
+        await updateData("links", editingLink.id, linkData);
         toast.success("Lien modifié avec succès");
       } else {
-        const { error } = await supabase.from("links").insert({
-          title: formData.title.trim(),
-          url: formData.url.trim(),
-          description: formData.description.trim() || null,
-          category_id: formData.category_id || null,
-          user_id: user.id,
-        });
-
-        if (error) throw error;
+        await insertData("links", linkData);
         toast.success("Lien ajouté avec succès");
       }
 
@@ -165,9 +146,8 @@ export function LinksSection() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("links").delete().eq("id", id);
-      if (error) throw error;
-      toast.success("Lien supprimé");
+      await deleteData("links", id);
+      toast.success("Lien déplacé vers la corbeille");
       fetchLinks();
     } catch (error) {
       toast.error("Erreur lors de la suppression");

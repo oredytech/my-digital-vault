@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Lightbulb, Sparkles, Trash2, Loader2, Grid3x3, List, Tag, Pencil, Filter, RefreshCw } from "lucide-react";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 
 interface Idea {
   id: string;
@@ -45,11 +46,16 @@ export function IdeasSection() {
   });
 
   const { loadDraft, clearDraft } = useAutoDraft(formData, "idea-draft", 15000);
+  const { getData, insertData, updateData, deleteData, isInitialized } = useLocalDatabase();
 
   useEffect(() => {
-    fetchIdeas();
-    fetchCategories();
-    
+    if (isInitialized) {
+      fetchIdeas();
+      fetchCategories();
+    }
+  }, [isInitialized]);
+
+  useEffect(() => {
     const draft = loadDraft();
     if (draft && !editingIdea) {
       setFormData({
@@ -62,13 +68,8 @@ export function IdeasSection() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setCategories(data || []);
+      const data = await getData<Category>("categories");
+      setCategories(data.sort((a, b) => a.name.localeCompare(b.name)));
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -76,13 +77,8 @@ export function IdeasSection() {
 
   const fetchIdeas = async () => {
     try {
-      const { data, error } = await supabase
-        .from("ideas")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setIdeas(data || []);
+      const data = await getData<Idea>("ideas");
+      setIdeas(data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     } catch (error) {
       toast.error("Erreur lors du chargement des idées");
     } finally {
@@ -120,30 +116,17 @@ export function IdeasSection() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      const ideaData = {
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        category_id: formData.category_id || null,
+      };
 
       if (editingIdea) {
-        const { error } = await supabase
-          .from("ideas")
-          .update({
-            title: formData.title.trim(),
-            content: formData.content.trim(),
-            category_id: formData.category_id || null,
-          })
-          .eq("id", editingIdea.id);
-
-        if (error) throw error;
+        await updateData("ideas", editingIdea.id, ideaData);
         toast.success("Idée modifiée avec succès");
       } else {
-        const { error } = await supabase.from("ideas").insert({
-          title: formData.title.trim(),
-          content: formData.content.trim(),
-          category_id: formData.category_id || null,
-          user_id: user.id,
-        });
-
-        if (error) throw error;
+        await insertData("ideas", ideaData);
         toast.success("Idée ajoutée avec succès");
       }
 
@@ -157,9 +140,8 @@ export function IdeasSection() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("ideas").delete().eq("id", id);
-      if (error) throw error;
-      toast.success("Idée supprimée");
+      await deleteData("ideas", id);
+      toast.success("Idée déplacée vers la corbeille");
       fetchIdeas();
     } catch (error) {
       toast.error("Erreur lors de la suppression");
@@ -176,12 +158,7 @@ export function IdeasSection() {
 
       if (error) throw error;
 
-      const { error: updateError } = await supabase
-        .from("ideas")
-        .update({ ai_suggestions: { suggestions: data.suggestions } })
-        .eq("id", idea.id);
-
-      if (updateError) throw updateError;
+      await updateData("ideas", idea.id, { ai_suggestions: { suggestions: data.suggestions } });
 
       toast.success("Suggestions générées !");
       fetchIdeas();
@@ -199,12 +176,7 @@ export function IdeasSection() {
 
   const saveSuggestion = async (ideaId: string) => {
     try {
-      const { error } = await supabase
-        .from("ideas")
-        .update({ ai_suggestions: { suggestions: editedSuggestion } })
-        .eq("id", ideaId);
-
-      if (error) throw error;
+      await updateData("ideas", ideaId, { ai_suggestions: { suggestions: editedSuggestion } });
       toast.success("Suggestions mises à jour");
       setEditingSuggestionId(null);
       fetchIdeas();

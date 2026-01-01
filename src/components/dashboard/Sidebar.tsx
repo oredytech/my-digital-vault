@@ -1,9 +1,11 @@
-import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2 } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { NotificationButton } from "./NotificationButton";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 
 type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
 
@@ -22,6 +24,7 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
   const { theme, setTheme } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const { isOnline, isSyncing, pendingCount, syncAll } = useLocalDatabase();
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -106,6 +109,31 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
 
         {/* Footer */}
         <div className="p-4 border-t border-sidebar-border space-y-2">
+          {/* Sync Button */}
+          {isOnline && pendingCount > 0 && (
+            <Button
+              variant="outline"
+              onClick={syncAll}
+              disabled={isSyncing}
+              className="w-full justify-start border-primary/50 text-primary hover:bg-primary/10"
+            >
+              <RefreshCw className={`w-5 h-5 mr-3 ${isSyncing ? "animate-spin" : ""}`} />
+              Synchroniser
+              <Badge variant="destructive" className="ml-auto">
+                {pendingCount}
+              </Badge>
+            </Button>
+          )}
+          {isOnline && pendingCount === 0 && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-green-500"
+              disabled
+            >
+              <Cloud className="w-5 h-5 mr-3" />
+              Synchronisé
+            </Button>
+          )}
           {!isInstalled && deferredPrompt && (
             <Button
               variant="outline"

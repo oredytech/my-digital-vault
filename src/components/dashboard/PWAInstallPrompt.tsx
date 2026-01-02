@@ -66,7 +66,7 @@ export function PWAInstallPrompt() {
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl shadow-vault p-6 w-full max-w-sm animate-fade-in">
+      <div className="bg-card border border-border rounded-2xl shadow-vault p-6 w-full max-w-sm animate-fade-in relative">
         <button
           onClick={handleDismiss}
           className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"

@@ -10,6 +10,7 @@ export function useLocalDatabase() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Update pending count
   const updatePendingCount = useCallback(async () => {
@@ -38,6 +39,7 @@ export function useLocalDatabase() {
 
       // Set current user for the database
       vaultKeepDB.setCurrentUser(currentUserId);
+      setUserId(currentUserId);
 
       if (!navigator.onLine) {
         setIsInitialized(true);
@@ -405,6 +407,7 @@ export function useLocalDatabase() {
     isSyncing,
     pendingCount,
     isInitialized,
+    userId,
     getData,
     insertData,
     updateData,

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Bell, Grid3x3, List, Calendar, Trash2, CheckCircle2, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 
 interface Reminder {
   id: string;
@@ -16,6 +17,7 @@ interface Reminder {
   related_type: string;
   related_id: string;
   created_at: string;
+  user_id?: string;
 }
 
 export function RemindersSection() {
@@ -23,28 +25,29 @@ export function RemindersSection() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
+  const { getData, updateData, deleteData, isOnline } = useLocalDatabase();
 
   useEffect(() => {
     fetchReminders();
     const createReminders = async () => {
-      try {
-        await supabase.rpc('create_account_expiration_reminder');
-      } catch (error) {
-        console.error('Error creating reminders:', error);
+      if (isOnline) {
+        try {
+          await supabase.rpc('create_account_expiration_reminder');
+        } catch (error) {
+          console.error('Error creating reminders:', error);
+        }
       }
     };
     createReminders();
-  }, []);
+  }, [isOnline]);
 
   const fetchReminders = async () => {
     try {
-      const { data, error } = await supabase
-        .from("reminders")
-        .select("*")
-        .order("remind_at", { ascending: true });
-
-      if (error) throw error;
-      setReminders(data || []);
+      const data = await getData("reminders");
+      const sortedData = (data as Reminder[]).sort((a, b) => 
+        new Date(a.remind_at).getTime() - new Date(b.remind_at).getTime()
+      );
+      setReminders(sortedData);
     } catch (error) {
       toast.error("Erreur lors du chargement des rappels");
     } finally {
@@ -54,12 +57,7 @@ export function RemindersSection() {
 
   const handleToggleComplete = async (id: string, currentStatus: boolean | null) => {
     try {
-      const { error } = await supabase
-        .from("reminders")
-        .update({ is_completed: !currentStatus })
-        .eq("id", id);
-
-      if (error) throw error;
+      await updateData("reminders", id, { is_completed: !currentStatus });
       toast.success(currentStatus ? "Rappel réactivé" : "Rappel marqué comme terminé");
       fetchReminders();
     } catch (error) {
@@ -68,6 +66,10 @@ export function RemindersSection() {
   };
 
   const handleSendEmail = async (reminderId: string) => {
+    if (!isOnline) {
+      toast.error("Connexion internet requise pour envoyer un email");
+      return;
+    }
     setSendingEmail(reminderId);
     try {
       const { error } = await supabase.functions.invoke("send-reminder-email", {
@@ -85,8 +87,7 @@ export function RemindersSection() {
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase.from("reminders").delete().eq("id", id);
-      if (error) throw error;
+      await deleteData("reminders", id);
       toast.success("Rappel supprimé");
       fetchReminders();
     } catch (error) {
@@ -142,7 +143,14 @@ export function RemindersSection() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <Button variant="ghost" size="icon" onClick={() => handleSendEmail(reminder.id)} disabled={sendingEmail === reminder.id} className="h-8 w-8" title="Envoyer par email">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleSendEmail(reminder.id)} 
+                        disabled={sendingEmail === reminder.id || !isOnline} 
+                        className="h-8 w-8" 
+                        title={isOnline ? "Envoyer par email" : "Connexion requise"}
+                      >
                         <Mail className="w-4 h-4 text-primary" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleToggleComplete(reminder.id, reminder.is_completed)} className="h-8 w-8">

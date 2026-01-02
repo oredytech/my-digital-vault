@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Tag, Trash2, Folder, Star, Briefcase, Home, Heart, Code, Book, Pencil, AlertTriangle, Link2, Users, Lightbulb } from "lucide-react";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 
 interface Category {
   id: string;
@@ -15,6 +15,7 @@ interface Category {
   icon: string | null;
   color: string | null;
   created_at: string;
+  user_id?: string;
 }
 
 interface CategoryCounts {
@@ -58,22 +59,22 @@ export function CategoriesSection() {
     color: "#06b6d4",
   });
 
+  const { getData, insertData, updateData, deleteData, userId } = useLocalDatabase();
+
   useEffect(() => {
     fetchCategories();
   }, []);
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setCategories(data || []);
+      const data = await getData("categories");
+      const sortedData = (data as Category[]).sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      setCategories(sortedData);
       
       // Fetch counts for each category
-      await fetchCategoryCounts(data || []);
+      await fetchCategoryCounts(sortedData);
     } catch (error) {
       toast.error("Erreur lors du chargement des catégories");
     } finally {
@@ -84,17 +85,17 @@ export function CategoriesSection() {
   const fetchCategoryCounts = async (cats: Category[]) => {
     const counts: Record<string, CategoryCounts> = {};
     
+    const [linksData, accountsData, ideasData] = await Promise.all([
+      getData("links"),
+      getData("accounts"),
+      getData("ideas"),
+    ]);
+    
     for (const cat of cats) {
-      const [linksResult, accountsResult, ideasResult] = await Promise.all([
-        supabase.from("links").select("id", { count: "exact" }).eq("category_id", cat.id),
-        supabase.from("accounts").select("id", { count: "exact" }).eq("category_id", cat.id),
-        supabase.from("ideas").select("id", { count: "exact" }).eq("category_id", cat.id),
-      ]);
-      
       counts[cat.id] = {
-        links: linksResult.count || 0,
-        accounts: accountsResult.count || 0,
-        ideas: ideasResult.count || 0,
+        links: (linksData as any[]).filter(l => l.category_id === cat.id).length,
+        accounts: (accountsData as any[]).filter(a => a.category_id === cat.id).length,
+        ideas: (ideasData as any[]).filter(i => i.category_id === cat.id).length,
       };
     }
     
@@ -142,30 +143,22 @@ export function CategoriesSection() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      if (!userId) throw new Error("Non authentifié");
 
       if (editingCategory) {
-        const { error } = await supabase
-          .from("categories")
-          .update({
-            name: formData.name.trim(),
-            icon: formData.icon,
-            color: formData.color,
-          })
-          .eq("id", editingCategory.id);
-
-        if (error) throw error;
-        toast.success("Catégorie modifiée avec succès");
-      } else {
-        const { error } = await supabase.from("categories").insert({
+        await updateData("categories", editingCategory.id, {
           name: formData.name.trim(),
           icon: formData.icon,
           color: formData.color,
-          user_id: user.id,
         });
-
-        if (error) throw error;
+        toast.success("Catégorie modifiée avec succès");
+      } else {
+        await insertData("categories", {
+          name: formData.name.trim(),
+          icon: formData.icon,
+          color: formData.color,
+          user_id: userId,
+        });
         toast.success("Catégorie créée avec succès");
       }
 
@@ -187,15 +180,25 @@ export function CategoriesSection() {
       if (targetCategoryId && totalItems > 0) {
         const newCategoryId = targetCategoryId === "none" ? null : targetCategoryId;
         
+        const [linksData, accountsData, ideasData] = await Promise.all([
+          getData("links"),
+          getData("accounts"),
+          getData("ideas"),
+        ]);
+        
+        // Update items with the new category
+        const linksToUpdate = (linksData as any[]).filter(l => l.category_id === categoryToDelete.id);
+        const accountsToUpdate = (accountsData as any[]).filter(a => a.category_id === categoryToDelete.id);
+        const ideasToUpdate = (ideasData as any[]).filter(i => i.category_id === categoryToDelete.id);
+        
         await Promise.all([
-          supabase.from("links").update({ category_id: newCategoryId }).eq("category_id", categoryToDelete.id),
-          supabase.from("accounts").update({ category_id: newCategoryId }).eq("category_id", categoryToDelete.id),
-          supabase.from("ideas").update({ category_id: newCategoryId }).eq("category_id", categoryToDelete.id),
+          ...linksToUpdate.map(l => updateData("links", l.id, { category_id: newCategoryId })),
+          ...accountsToUpdate.map(a => updateData("accounts", a.id, { category_id: newCategoryId })),
+          ...ideasToUpdate.map(i => updateData("ideas", i.id, { category_id: newCategoryId })),
         ]);
       }
       
-      const { error } = await supabase.from("categories").delete().eq("id", categoryToDelete.id);
-      if (error) throw error;
+      await deleteData("categories", categoryToDelete.id);
       
       toast.success("Catégorie supprimée");
       setDeleteDialogOpen(false);

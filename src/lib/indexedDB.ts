@@ -1,6 +1,6 @@
-// IndexedDB Database for VaultKeep - Persistent local storage
-const DB_NAME = "vaultkeep_db";
-const DB_VERSION = 2;
+// IndexedDB Database for VaultKeep - Persistent local storage with multi-user support
+const DB_PREFIX = "vaultkeep_";
+const DB_VERSION = 3;
 
 export interface LocalItem {
   id: string;
@@ -27,17 +27,63 @@ export interface PendingAction {
   timestamp: number;
 }
 
-class VaultKeepDB {
-  private db: IDBDatabase | null = null;
-  private dbReady: Promise<IDBDatabase>;
+export interface StoredCredentials {
+  id: string;
+  email: string;
+  hashedPassword: string;
+  userId: string;
+  fullName?: string;
+  lastLogin: number;
+}
 
-  constructor() {
-    this.dbReady = this.initDB();
+// Simple hash function for password storage (not cryptographically secure, but adequate for offline demo)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + "vaultkeep_salt");
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  const inputHash = await hashPassword(password);
+  return inputHash === hash;
+}
+
+class VaultKeepDB {
+  private databases: Map<string, IDBDatabase> = new Map();
+  private dbPromises: Map<string, Promise<IDBDatabase>> = new Map();
+  private currentUserId: string | null = null;
+
+  // Get database name for a specific user
+  private getDBName(userId?: string): string {
+    const id = userId || this.currentUserId || "anonymous";
+    return `${DB_PREFIX}${id}`;
   }
 
-  private initDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+  // Set current user ID
+  setCurrentUser(userId: string | null): void {
+    this.currentUserId = userId;
+  }
+
+  getCurrentUser(): string | null {
+    return this.currentUserId;
+  }
+
+  // Initialize database for a specific user
+  private initDB(userId?: string): Promise<IDBDatabase> {
+    const dbName = this.getDBName(userId);
+
+    if (this.databases.has(dbName)) {
+      return Promise.resolve(this.databases.get(dbName)!);
+    }
+
+    if (this.dbPromises.has(dbName)) {
+      return this.dbPromises.get(dbName)!;
+    }
+
+    const promise = new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(dbName, DB_VERSION);
 
       request.onerror = () => {
         console.error("IndexedDB error:", request.error);
@@ -45,8 +91,8 @@ class VaultKeepDB {
       };
 
       request.onsuccess = () => {
-        this.db = request.result;
-        resolve(this.db);
+        this.databases.set(dbName, request.result);
+        resolve(request.result);
       };
 
       request.onupgradeneeded = (event) => {
@@ -77,14 +123,114 @@ class VaultKeepDB {
         }
       };
     });
+
+    this.dbPromises.set(dbName, promise);
+    return promise;
   }
 
-  private async getDB(): Promise<IDBDatabase> {
-    if (this.db) return this.db;
-    return this.dbReady;
+  private async getDB(userId?: string): Promise<IDBDatabase> {
+    return this.initDB(userId);
   }
 
-  // Generic CRUD operations for any table
+  // ============ CREDENTIALS MANAGEMENT (Global DB) ============
+
+  private async getCredentialsDB(): Promise<IDBDatabase> {
+    const dbName = "vaultkeep_credentials";
+
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(dbName, 1);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains("credentials")) {
+          const store = db.createObjectStore("credentials", { keyPath: "id" });
+          store.createIndex("email", "email", { unique: true });
+          store.createIndex("userId", "userId", { unique: true });
+        }
+      };
+    });
+  }
+
+  async saveCredentials(email: string, password: string, userId: string, fullName?: string): Promise<void> {
+    const db = await this.getCredentialsDB();
+    const hashedPassword = await hashPassword(password);
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("credentials", "readwrite");
+      const store = transaction.objectStore("credentials");
+
+      const credentials: StoredCredentials = {
+        id: email.toLowerCase(),
+        email: email.toLowerCase(),
+        hashedPassword,
+        userId,
+        fullName,
+        lastLogin: Date.now(),
+      };
+
+      const request = store.put(credentials);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async verifyOfflineCredentials(email: string, password: string): Promise<{ valid: boolean; userId?: string; fullName?: string }> {
+    const db = await this.getCredentialsDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("credentials", "readonly");
+      const store = transaction.objectStore("credentials");
+      const request = store.get(email.toLowerCase());
+
+      request.onsuccess = async () => {
+        const credentials = request.result as StoredCredentials | undefined;
+        if (!credentials) {
+          resolve({ valid: false });
+          return;
+        }
+
+        const isValid = await verifyPassword(password, credentials.hashedPassword);
+        resolve({
+          valid: isValid,
+          userId: isValid ? credentials.userId : undefined,
+          fullName: isValid ? credentials.fullName : undefined,
+        });
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getStoredCredentials(email: string): Promise<StoredCredentials | null> {
+    const db = await this.getCredentialsDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("credentials", "readonly");
+      const store = transaction.objectStore("credentials");
+      const request = store.get(email.toLowerCase());
+
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllStoredUsers(): Promise<StoredCredentials[]> {
+    const db = await this.getCredentialsDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("credentials", "readonly");
+      const store = transaction.objectStore("credentials");
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // ============ GENERIC CRUD OPERATIONS ============
+
   async getAll<T>(table: string): Promise<T[]> {
     const db = await this.getDB();
     return new Promise((resolve, reject) => {
@@ -185,7 +331,8 @@ class VaultKeepDB {
     });
   }
 
-  // Trash operations
+  // ============ TRASH OPERATIONS ============
+
   async moveToTrash(table: string, id: string, data: any): Promise<void> {
     const db = await this.getDB();
     const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
@@ -303,7 +450,8 @@ class VaultKeepDB {
     });
   }
 
-  // Pending actions for sync
+  // ============ PENDING ACTIONS FOR SYNC ============
+
   async addPendingAction(action: Omit<PendingAction, "id">): Promise<string> {
     const db = await this.getDB();
     const id = crypto.randomUUID();
@@ -357,7 +505,6 @@ class VaultKeepDB {
     });
   }
 
-  // Get pending count
   async getPendingCount(): Promise<number> {
     const actions = await this.getPendingActions();
     return actions.length;

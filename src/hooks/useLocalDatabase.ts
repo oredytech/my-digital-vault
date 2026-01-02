@@ -13,20 +13,37 @@ export function useLocalDatabase() {
 
   // Update pending count
   const updatePendingCount = useCallback(async () => {
-    const count = await vaultKeepDB.getPendingCount();
-    setPendingCount(count);
+    try {
+      const count = await vaultKeepDB.getPendingCount();
+      setPendingCount(count);
+    } catch (error) {
+      console.error("Error getting pending count:", error);
+    }
   }, []);
 
   // Initialize and sync data from cloud to local
-  const initializeLocalData = useCallback(async () => {
-    if (!navigator.onLine) {
-      setIsInitialized(true);
-      return;
-    }
-
+  const initializeLocalData = useCallback(async (userId?: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      let currentUserId = userId;
+
+      if (!currentUserId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        currentUserId = user?.id;
+      }
+
+      if (!currentUserId) {
+        setIsInitialized(true);
+        return;
+      }
+
+      // Set current user for the database
+      vaultKeepDB.setCurrentUser(currentUserId);
+
+      if (!navigator.onLine) {
+        setIsInitialized(true);
+        await updatePendingCount();
+        return;
+      }
 
       // Fetch all data from cloud and store locally
       const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders"];
@@ -49,13 +66,32 @@ export function useLocalDatabase() {
       }
 
       setIsInitialized(true);
+      await updatePendingCount();
     } catch (error) {
       console.error("Error initializing local data:", error);
       setIsInitialized(true);
     }
+  }, [updatePendingCount]);
+
+  // Store credentials locally for offline authentication
+  const storeCredentials = useCallback(async (
+    email: string,
+    password: string,
+    userId: string,
+    fullName?: string
+  ): Promise<void> => {
+    await vaultKeepDB.saveCredentials(email, password, userId, fullName);
   }, []);
 
-  // Get data (from local DB, falls back to cloud if online and needed)
+  // Verify credentials offline
+  const verifyOfflineCredentials = useCallback(async (
+    email: string,
+    password: string
+  ): Promise<{ valid: boolean; userId?: string; fullName?: string }> => {
+    return vaultKeepDB.verifyOfflineCredentials(email, password);
+  }, []);
+
+  // Get data (from local DB)
   const getData = useCallback(async <T>(table: TableName): Promise<T[]> => {
     try {
       const localData = await vaultKeepDB.getAll<T>(table);
@@ -72,15 +108,21 @@ export function useLocalDatabase() {
     data: Record<string, any>
   ): Promise<Record<string, any> | null> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Non authentifié");
+      let userId = vaultKeepDB.getCurrentUser();
+      
+      if (!userId) {
+        const { data: { user } } = await supabase.auth.getUser();
+        userId = user?.id || null;
+      }
+
+      if (!userId) throw new Error("Non authentifié");
 
       const id = data.id || crypto.randomUUID();
       const now = new Date().toISOString();
       const newItem = {
         ...data,
         id,
-        user_id: user.id,
+        user_id: userId,
         created_at: now,
         updated_at: now,
       };
@@ -263,8 +305,13 @@ export function useLocalDatabase() {
     let successCount = 0;
     let failedActions: PendingAction[] = [];
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
+    let userId = vaultKeepDB.getCurrentUser();
+    if (!userId) {
+      const { data: { user } } = await supabase.auth.getUser();
+      userId = user?.id || null;
+    }
+
+    if (!userId) {
       setIsSyncing(false);
       return;
     }
@@ -273,7 +320,7 @@ export function useLocalDatabase() {
       try {
         switch (action.action) {
           case "insert":
-            const insertData = { ...action.data, user_id: user.id };
+            const insertData = { ...action.data, user_id: userId };
             const { error: insertError } = await supabase
               .from(action.table as any)
               .upsert(insertData);
@@ -351,8 +398,7 @@ export function useLocalDatabase() {
   // Initialize on mount
   useEffect(() => {
     initializeLocalData();
-    updatePendingCount();
-  }, [initializeLocalData, updatePendingCount]);
+  }, [initializeLocalData]);
 
   return {
     isOnline,
@@ -368,5 +414,7 @@ export function useLocalDatabase() {
     permanentDeleteFromTrash,
     syncAll,
     initializeLocalData,
+    storeCredentials,
+    verifyOfflineCredentials,
   };
 }

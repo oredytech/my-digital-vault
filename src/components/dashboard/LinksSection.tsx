@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Plus, Link2, ExternalLink, Trash2, Grid3x3, List, Tag, Pencil, Filter, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { PendingBadge } from "./PendingBadge";
 
 interface Link {
   id: string;
@@ -44,7 +45,7 @@ export function LinksSection() {
   });
 
   const { loadDraft, clearDraft } = useAutoDraft(formData, "link-draft", 15000);
-  const { getData, insertData, updateData, deleteData, isInitialized } = useLocalDatabase();
+  const { getData, insertData, updateData, deleteData, isInitialized, pendingIds } = useLocalDatabase();
 
   useEffect(() => {
     if (isInitialized) {
@@ -396,6 +397,7 @@ export function LinksSection() {
       <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
         {filteredLinks.map((link) => {
           const category = getCategoryForLink(link.category_id);
+          const isPending = pendingIds.has(link.id);
           return (
             <Card key={link.id} className="hover:shadow-vault transition-shadow rounded-xl">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -404,7 +406,10 @@ export function LinksSection() {
                     <Link2 className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-base truncate">{link.title}</CardTitle>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CardTitle className="text-base truncate">{link.title}</CardTitle>
+                      <PendingBadge isPending={isPending} />
+                    </div>
                     {category && (
                       <div className="flex items-center mt-1">
                         <Tag className="w-3 h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />

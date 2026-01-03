@@ -509,6 +509,17 @@ class VaultKeepDB {
     const actions = await this.getPendingActions();
     return actions.length;
   }
+
+  async getPendingIds(): Promise<Set<string>> {
+    const actions = await this.getPendingActions();
+    const ids = new Set<string>();
+    actions.forEach(action => {
+      if (action.data?.id) {
+        ids.add(action.data.id);
+      }
+    });
+    return ids;
+  }
 }
 
 // Singleton instance

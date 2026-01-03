@@ -7,6 +7,7 @@ import { Bell, Grid3x3, List, Calendar, Trash2, CheckCircle2, Mail } from "lucid
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { PendingBadge } from "./PendingBadge";
 
 interface Reminder {
   id: string;
@@ -25,7 +26,7 @@ export function RemindersSection() {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [sendingEmail, setSendingEmail] = useState<string | null>(null);
-  const { getData, updateData, deleteData, isOnline } = useLocalDatabase();
+  const { getData, updateData, deleteData, isOnline, pendingIds } = useLocalDatabase();
 
   useEffect(() => {
     fetchReminders();
@@ -126,6 +127,7 @@ export function RemindersSection() {
           <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "space-y-3"}>
             {activeReminders.map((reminder) => {
               const isOverdue = isPast(reminder.remind_at);
+              const isPending = pendingIds.has(reminder.id);
               return (
                 <Card key={reminder.id} className={`hover:shadow-vault transition-shadow ${isOverdue ? 'border-destructive/50' : ''}`}>
                   <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
@@ -134,7 +136,10 @@ export function RemindersSection() {
                         <Bell className={`w-5 h-5 ${isOverdue ? 'text-destructive' : 'text-primary'}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <CardTitle className="text-base">{reminder.title}</CardTitle>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <CardTitle className="text-base">{reminder.title}</CardTitle>
+                          <PendingBadge isPending={isPending} />
+                        </div>
                         <div className="flex items-center text-xs text-muted-foreground mt-1">
                           <Calendar className="w-3 h-3 mr-1" />
                           {format(new Date(reminder.remind_at), "dd MMM yyyy 'à' HH:mm", { locale: fr })}

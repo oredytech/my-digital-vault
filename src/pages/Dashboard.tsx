@@ -14,6 +14,8 @@ import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { TrashSection } from "@/components/dashboard/TrashSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
+import { vaultKeepDB } from "@/lib/indexedDB";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
 
 type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
@@ -23,35 +25,73 @@ const Dashboard = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<ActiveSection>("stats");
+  const [isOfflineAuth, setIsOfflineAuth] = useState(false);
+  const { initializeLocalData, isOnline } = useLocalDatabase();
 
   useEffect(() => {
+    const checkAuth = async () => {
+      // Check for offline user first
+      const offlineUserId = vaultKeepDB.getCurrentUser();
+      
+      if (navigator.onLine) {
+        // Online mode - check Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          setSession(session);
+          vaultKeepDB.setCurrentUser(session.user.id);
+          await initializeLocalData(session.user.id);
+        } else if (offlineUserId) {
+          // User was authenticated offline, try to continue offline
+          setIsOfflineAuth(true);
+          await initializeLocalData(offlineUserId);
+        } else {
+          navigate("/auth");
+        }
+      } else {
+        // Offline mode - check if we have a stored user
+        if (offlineUserId) {
+          setIsOfflineAuth(true);
+          await initializeLocalData(offlineUserId);
+        } else {
+          navigate("/auth");
+        }
+      }
+      
+      setLoading(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes when online
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-        if (!session) {
+      async (_event, session) => {
+        if (session) {
+          setSession(session);
+          setIsOfflineAuth(false);
+          vaultKeepDB.setCurrentUser(session.user.id);
+        } else if (!vaultKeepDB.getCurrentUser()) {
           navigate("/auth");
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
-        navigate("/auth");
-      }
-      setLoading(false);
-    });
-
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, initializeLocalData]);
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      if (isOnline) {
+        await supabase.auth.signOut();
+      }
+      vaultKeepDB.setCurrentUser(null);
       toast.success("Déconnexion réussie");
       navigate("/auth");
     } catch (error) {
-      toast.error("Erreur lors de la déconnexion");
+      // Even if Supabase signout fails, clear local user
+      vaultKeepDB.setCurrentUser(null);
+      toast.success("Déconnexion réussie");
+      navigate("/auth");
     }
   };
 

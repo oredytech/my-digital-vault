@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
-import { BarChart3, PieChartIcon, Bell, Link2, Users, Lightbulb, Loader2 } from "lucide-react";
+import { BarChart3, PieChartIcon, Bell, Link2, Users, Lightbulb, Loader2, WifiOff } from "lucide-react";
 
 interface CategoryStats {
   name: string;
@@ -12,42 +12,64 @@ interface CategoryStats {
   color: string;
 }
 
-interface UpcomingReminder {
+interface Category {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+interface Link {
+  id: string;
+  category_id: string | null;
+}
+
+interface Account {
+  id: string;
+  category_id: string | null;
+}
+
+interface Idea {
+  id: string;
+  category_id: string | null;
+}
+
+interface Reminder {
   id: string;
   title: string;
   remind_at: string;
   related_type: string;
+  is_completed: boolean | null;
 }
 
 export function StatisticsSection() {
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
-  const [upcomingReminders, setUpcomingReminders] = useState<UpcomingReminder[]>([]);
+  const [upcomingReminders, setUpcomingReminders] = useState<Reminder[]>([]);
   const [totalCounts, setTotalCounts] = useState({ links: 0, accounts: 0, ideas: 0, reminders: 0 });
   const [loading, setLoading] = useState(true);
+  const { getData, isOnline, isInitialized } = useLocalDatabase();
 
   useEffect(() => {
-    fetchStatistics();
-  }, []);
+    if (isInitialized) {
+      fetchStatistics();
+    }
+  }, [isInitialized]);
 
   const fetchStatistics = async () => {
     try {
-      // Fetch categories
-      const { data: categories } = await supabase
-        .from("categories")
-        .select("id, name, color");
-
-      // Fetch all items
-      const [linksRes, accountsRes, ideasRes, remindersRes] = await Promise.all([
-        supabase.from("links").select("id, category_id"),
-        supabase.from("accounts").select("id, category_id"),
-        supabase.from("ideas").select("id, category_id"),
-        supabase.from("reminders").select("id, title, remind_at, related_type, is_completed").eq("is_completed", false).order("remind_at", { ascending: true }).limit(5),
+      // Fetch all data from local database
+      const [categories, links, accounts, ideas, allReminders] = await Promise.all([
+        getData<Category>("categories"),
+        getData<Link>("links"),
+        getData<Account>("accounts"),
+        getData<Idea>("ideas"),
+        getData<Reminder>("reminders"),
       ]);
 
-      const links = linksRes.data || [];
-      const accounts = accountsRes.data || [];
-      const ideas = ideasRes.data || [];
-      const reminders = remindersRes.data || [];
+      // Filter active reminders and sort by date
+      const reminders = allReminders
+        .filter((r) => !r.is_completed)
+        .sort((a, b) => new Date(a.remind_at).getTime() - new Date(b.remind_at).getTime())
+        .slice(0, 5);
 
       // Calculate totals
       setTotalCounts({
@@ -58,7 +80,7 @@ export function StatisticsSection() {
       });
 
       // Calculate stats per category
-      const stats: CategoryStats[] = (categories || []).map((cat) => ({
+      const stats: CategoryStats[] = categories.map((cat) => ({
         name: cat.name,
         links: links.filter((l) => l.category_id === cat.id).length,
         accounts: accounts.filter((a) => a.category_id === cat.id).length,
@@ -108,6 +130,12 @@ export function StatisticsSection() {
         <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <BarChart3 className="w-6 h-6 text-primary" />
           Statistiques
+          {!isOnline && (
+            <span className="flex items-center gap-1 text-xs font-normal text-amber-500 bg-amber-500/10 rounded-full px-2 py-1">
+              <WifiOff className="w-3 h-3" />
+              Hors-ligne
+            </span>
+          )}
         </h2>
       </div>
 

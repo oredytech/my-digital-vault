@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, X } from "lucide-react";
+import { Download, X, Smartphone, Shield, WifiOff } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,6 +11,7 @@ export function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isInstalling, setIsInstalling] = useState(false);
 
   useEffect(() => {
     // Check if already installed
@@ -25,7 +26,17 @@ export function PWAInstallPrompt() {
       
       // Show prompt after a delay if user hasn't dismissed it
       const dismissed = localStorage.getItem("pwa-prompt-dismissed");
-      if (!dismissed) {
+      const lastDismissed = localStorage.getItem("pwa-prompt-dismissed-time");
+      
+      // Show again after 7 days
+      if (dismissed && lastDismissed) {
+        const dismissedTime = parseInt(lastDismissed, 10);
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
+        if (Date.now() - dismissedTime > sevenDays) {
+          localStorage.removeItem("pwa-prompt-dismissed");
+          setTimeout(() => setShowPrompt(true), 3000);
+        }
+      } else if (!dismissed) {
         setTimeout(() => setShowPrompt(true), 3000);
       }
     };
@@ -34,6 +45,7 @@ export function PWAInstallPrompt() {
       setIsInstalled(true);
       setShowPrompt(false);
       setDeferredPrompt(null);
+      localStorage.removeItem("pwa-prompt-dismissed");
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
@@ -48,18 +60,27 @@ export function PWAInstallPrompt() {
   const handleInstall = async () => {
     if (!deferredPrompt) return;
 
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    setIsInstalling(true);
+    try {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
 
-    if (outcome === "accepted") {
-      setShowPrompt(false);
+      if (outcome === "accepted") {
+        setShowPrompt(false);
+        setIsInstalled(true);
+      }
+    } catch (error) {
+      console.error("Installation error:", error);
+    } finally {
+      setIsInstalling(false);
+      setDeferredPrompt(null);
     }
-    setDeferredPrompt(null);
   };
 
   const handleDismiss = () => {
     setShowPrompt(false);
     localStorage.setItem("pwa-prompt-dismissed", "true");
+    localStorage.setItem("pwa-prompt-dismissed-time", Date.now().toString());
   };
 
   if (isInstalled || !showPrompt) return null;
@@ -79,9 +100,26 @@ export function PWAInstallPrompt() {
             <Download className="w-8 h-8 text-primary" />
           </div>
           <h3 className="text-xl font-semibold text-foreground">Installer VaultKeep</h3>
-          <p className="text-sm text-muted-foreground mt-2 mb-6">
-            Installez l'application pour un accès rapide et hors-ligne sur votre appareil
+          <p className="text-sm text-muted-foreground mt-2 mb-4">
+            Installez l'application pour un accès rapide et hors-ligne
           </p>
+          
+          {/* Features */}
+          <div className="w-full space-y-2 mb-6 text-left">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <WifiOff className="w-4 h-4 text-primary" />
+              <span>Accès hors-ligne complet</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Smartphone className="w-4 h-4 text-primary" />
+              <span>Expérience native</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Shield className="w-4 h-4 text-primary" />
+              <span>Données sécurisées localement</span>
+            </div>
+          </div>
+          
           <div className="flex gap-3 w-full">
             <Button
               onClick={handleDismiss}
@@ -93,9 +131,10 @@ export function PWAInstallPrompt() {
             <Button
               onClick={handleInstall}
               className="flex-1"
+              disabled={isInstalling || !deferredPrompt}
             >
               <Download className="w-4 h-4 mr-2" />
-              Installer
+              {isInstalling ? "Installation..." : "Installer"}
             </Button>
           </div>
         </div>

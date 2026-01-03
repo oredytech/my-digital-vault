@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Link2, Users, Lightbulb, Bell, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
+import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
@@ -9,6 +9,30 @@ interface SearchResult {
   type: "link" | "account" | "idea" | "reminder";
   title: string;
   subtitle?: string;
+}
+
+interface Link {
+  id: string;
+  title: string;
+  url: string;
+}
+
+interface Account {
+  id: string;
+  name: string;
+  email?: string;
+}
+
+interface Idea {
+  id: string;
+  title: string;
+  content?: string;
+}
+
+interface Reminder {
+  id: string;
+  title: string;
+  description?: string;
 }
 
 interface GlobalSearchProps {
@@ -19,28 +43,41 @@ export function GlobalSearch({ onSelectSection }: GlobalSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
+  const { getData, isInitialized } = useLocalDatabase();
 
   useEffect(() => {
-    if (query.length < 2) {
+    if (query.length < 2 || !isInitialized) {
       setResults([]);
       return;
     }
 
     const searchAll = async () => {
-      const searchTerm = `%${query}%`;
+      const searchTerm = query.toLowerCase();
       
-      const [linksRes, accountsRes, ideasRes, remindersRes] = await Promise.all([
-        supabase.from("links").select("id, title, url").ilike("title", searchTerm).limit(5),
-        supabase.from("accounts").select("id, name, email").ilike("name", searchTerm).limit(5),
-        supabase.from("ideas").select("id, title, content").ilike("title", searchTerm).limit(5),
-        supabase.from("reminders").select("id, title, description").ilike("title", searchTerm).limit(5),
+      const [links, accounts, ideas, reminders] = await Promise.all([
+        getData<Link>("links"),
+        getData<Account>("accounts"),
+        getData<Idea>("ideas"),
+        getData<Reminder>("reminders"),
       ]);
 
       const combined: SearchResult[] = [
-        ...(linksRes.data || []).map(l => ({ id: l.id, type: "link" as const, title: l.title, subtitle: l.url })),
-        ...(accountsRes.data || []).map(a => ({ id: a.id, type: "account" as const, title: a.name, subtitle: a.email || undefined })),
-        ...(ideasRes.data || []).map(i => ({ id: i.id, type: "idea" as const, title: i.title, subtitle: i.content?.slice(0, 50) })),
-        ...(remindersRes.data || []).map(r => ({ id: r.id, type: "reminder" as const, title: r.title, subtitle: r.description || undefined })),
+        ...links
+          .filter(l => l.title.toLowerCase().includes(searchTerm))
+          .slice(0, 5)
+          .map(l => ({ id: l.id, type: "link" as const, title: l.title, subtitle: l.url })),
+        ...accounts
+          .filter(a => a.name.toLowerCase().includes(searchTerm))
+          .slice(0, 5)
+          .map(a => ({ id: a.id, type: "account" as const, title: a.name, subtitle: a.email || undefined })),
+        ...ideas
+          .filter(i => i.title.toLowerCase().includes(searchTerm))
+          .slice(0, 5)
+          .map(i => ({ id: i.id, type: "idea" as const, title: i.title, subtitle: i.content?.slice(0, 50) })),
+        ...reminders
+          .filter(r => r.title.toLowerCase().includes(searchTerm))
+          .slice(0, 5)
+          .map(r => ({ id: r.id, type: "reminder" as const, title: r.title, subtitle: r.description || undefined })),
       ];
 
       setResults(combined);
@@ -48,7 +85,7 @@ export function GlobalSearch({ onSelectSection }: GlobalSearchProps) {
 
     const debounce = setTimeout(searchAll, 300);
     return () => clearTimeout(debounce);
-  }, [query]);
+  }, [query, isInitialized, getData]);
 
   const getIcon = (type: string) => {
     switch (type) {

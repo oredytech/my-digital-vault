@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Plus, Lightbulb, Sparkles, Trash2, Loader2, Grid3x3, List, Tag, Pencil, Filter, RefreshCw } from "lucide-react";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { PendingBadge } from "./PendingBadge";
 
 interface Idea {
   id: string;
@@ -46,7 +47,7 @@ export function IdeasSection() {
   });
 
   const { loadDraft, clearDraft } = useAutoDraft(formData, "idea-draft", 15000);
-  const { getData, insertData, updateData, deleteData, isInitialized } = useLocalDatabase();
+  const { getData, insertData, updateData, deleteData, isInitialized, pendingIds, isOnline } = useLocalDatabase();
 
   useEffect(() => {
     if (isInitialized) {
@@ -311,6 +312,7 @@ export function IdeasSection() {
       <div className={viewMode === "grid" ? "grid gap-4 grid-cols-1 sm:grid-cols-2" : "space-y-3"}>
         {filteredIdeas.map((idea) => {
           const category = getCategoryForIdea(idea.category_id);
+          const isPending = pendingIds.has(idea.id);
           return (
             <Card key={idea.id} className="hover:shadow-vault transition-shadow rounded-xl">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
@@ -319,7 +321,10 @@ export function IdeasSection() {
                     <Lightbulb className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg truncate">{idea.title}</CardTitle>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CardTitle className="text-lg truncate">{idea.title}</CardTitle>
+                      <PendingBadge isPending={isPending} />
+                    </div>
                     {category && (
                       <div className="flex items-center mt-1">
                         <Tag className="w-3 h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />
@@ -412,8 +417,9 @@ export function IdeasSection() {
                     variant="outline"
                     size="sm"
                     onClick={() => generateSuggestions(idea)}
-                    disabled={generatingSuggestions === idea.id}
+                    disabled={generatingSuggestions === idea.id || !isOnline}
                     className="w-full rounded-xl"
+                    title={isOnline ? undefined : "Connexion requise"}
                   >
                     {generatingSuggestions === idea.id ? (
                       <>

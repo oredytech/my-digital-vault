@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Plus, Tag, Trash2, Folder, Star, Briefcase, Home, Heart, Code, Book, Pencil, AlertTriangle, Link2, Users, Lightbulb } from "lucide-react";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { PendingBadge } from "./PendingBadge";
 
 interface Category {
   id: string;
@@ -59,7 +60,7 @@ export function CategoriesSection() {
     color: "#06b6d4",
   });
 
-  const { getData, insertData, updateData, deleteData, userId } = useLocalDatabase();
+  const { getData, insertData, updateData, deleteData, userId, pendingIds } = useLocalDatabase();
 
   useEffect(() => {
     fetchCategories();
@@ -339,7 +340,10 @@ export function CategoriesSection() {
                 </div>
               </CardHeader>
               <CardContent>
-                <CardTitle className="text-lg truncate">{category.name}</CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-lg truncate">{category.name}</CardTitle>
+                  <PendingBadge isPending={pendingIds.has(category.id)} />
+                </div>
                 <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Link2 className="w-3 h-3" />

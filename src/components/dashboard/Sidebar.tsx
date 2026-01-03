@@ -1,4 +1,4 @@
-import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { NotificationButton } from "./NotificationButton";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { DataBackup } from "./DataBackup";
 
 type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
 
@@ -24,6 +25,7 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
   const { theme, setTheme } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
   const { isOnline, isSyncing, pendingCount, syncAll } = useLocalDatabase();
 
   useEffect(() => {
@@ -144,6 +146,15 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
               Installer l'app
             </Button>
           )}
+          <Button
+            variant="ghost"
+            onClick={() => setBackupOpen(true)}
+            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50"
+          >
+            <HardDrive className="w-5 h-5 mr-3" />
+            Sauvegarde
+          </Button>
+          <DataBackup open={backupOpen} onOpenChange={setBackupOpen} />
           <NotificationButton variant="full" />
           <Button
             variant="ghost"

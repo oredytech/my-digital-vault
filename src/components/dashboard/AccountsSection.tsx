@@ -18,6 +18,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useAutoDraft } from "@/hooks/useAutoDraft";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { PendingBadge } from "./PendingBadge";
 
 interface Account {
   id: string;
@@ -84,7 +85,7 @@ export function AccountsSection() {
     15000
   );
 
-  const { getData, insertData, updateData, deleteData, isInitialized } = useLocalDatabase();
+  const { getData, insertData, updateData, deleteData, isInitialized, pendingIds } = useLocalDatabase();
 
   useEffect(() => {
     if (isInitialized) {
@@ -687,11 +688,15 @@ export function AccountsSection() {
                   const category = getCategoryForAccount(account.category_id);
                   const expDate = getAccountExpiration(account);
                   const expiring = isExpiringSoon(expDate);
+                  const isPending = pendingIds.has(account.id);
                   
                   return (
                     <TableRow key={account.id}>
                       <TableCell className="font-medium">
-                        <span className="block truncate" title={account.name}>{account.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate" title={account.name}>{account.name}</span>
+                          <PendingBadge isPending={isPending} />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <span className="block truncate" title={account.email || "-"}>{account.email || "-"}</span>
@@ -741,6 +746,7 @@ export function AccountsSection() {
             const expDate = getAccountExpiration(account);
             const expiring = isExpiringSoon(expDate);
             const category = getCategoryForAccount(account.category_id);
+            const isPending = pendingIds.has(account.id);
             
             return (
               <Card key={account.id} className={cn(
@@ -753,7 +759,10 @@ export function AccountsSection() {
                       <Users className="w-5 h-5 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate">{account.name}</CardTitle>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CardTitle className="text-lg truncate">{account.name}</CardTitle>
+                        <PendingBadge isPending={isPending} />
+                      </div>
                       {category && (
                         <div className="flex items-center mt-1">
                           <Tag className="w-3 h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />

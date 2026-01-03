@@ -11,12 +11,15 @@ export function useLocalDatabase() {
   const [pendingCount, setPendingCount] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
-  // Update pending count
+  // Update pending count and IDs
   const updatePendingCount = useCallback(async () => {
     try {
       const count = await vaultKeepDB.getPendingCount();
+      const ids = await vaultKeepDB.getPendingIds();
       setPendingCount(count);
+      setPendingIds(ids);
     } catch (error) {
       console.error("Error getting pending count:", error);
     }
@@ -406,6 +409,7 @@ export function useLocalDatabase() {
     isOnline,
     isSyncing,
     pendingCount,
+    pendingIds,
     isInitialized,
     userId,
     getData,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { vaultKeepDB, TrashItem, PendingAction } from "@/lib/indexedDB";
+import { fileSystemStorage } from "@/lib/fileSystemStorage";
 import { toast } from "sonner";
 
 type TableName = "accounts" | "links" | "ideas" | "categories" | "reminders";
@@ -12,6 +13,8 @@ export function useLocalDatabase() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [hasFileSystemAccess, setHasFileSystemAccess] = useState(false);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
 
   // Update pending count and IDs
   const updatePendingCount = useCallback(async () => {
@@ -22,6 +25,56 @@ export function useLocalDatabase() {
       setPendingIds(ids);
     } catch (error) {
       console.error("Error getting pending count:", error);
+    }
+  }, []);
+
+  // Save data to file system if access is granted
+  const saveToFileSystem = useCallback(async () => {
+    if (!hasFileSystemAccess) return;
+    
+    try {
+      const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders"];
+      const data: Record<string, any[]> = {};
+      
+      for (const table of tables) {
+        data[table] = await vaultKeepDB.getAll(table);
+      }
+      
+      await fileSystemStorage.saveAllData({
+        accounts: data.accounts,
+        links: data.links,
+        ideas: data.ideas,
+        categories: data.categories,
+        reminders: data.reminders,
+      });
+    } catch (error) {
+      console.error("Error saving to file system:", error);
+    }
+  }, [hasFileSystemAccess]);
+
+  // Request file system access
+  const requestFileSystemAccess = useCallback(async (): Promise<boolean> => {
+    if (!fileSystemStorage.isAvailable()) {
+      toast.error("Le stockage local n'est pas supporté par ce navigateur");
+      return false;
+    }
+    
+    const granted = await fileSystemStorage.requestAccess();
+    setHasFileSystemAccess(granted);
+    
+    if (granted) {
+      toast.success(`Dossier "${fileSystemStorage.getFolderName()}" créé pour stocker vos données`);
+      await saveToFileSystem();
+    }
+    
+    return granted;
+  }, [saveToFileSystem]);
+
+  // Check existing file system permission
+  const checkFileSystemAccess = useCallback(async () => {
+    if (fileSystemStorage.isAvailable()) {
+      const hasAccess = await fileSystemStorage.checkPermission();
+      setHasFileSystemAccess(hasAccess);
     }
   }, []);
 
@@ -44,11 +97,16 @@ export function useLocalDatabase() {
       vaultKeepDB.setCurrentUser(currentUserId);
       setUserId(currentUserId);
 
+      // Check file system access
+      await checkFileSystemAccess();
+
       if (!navigator.onLine) {
         setIsInitialized(true);
         await updatePendingCount();
         return;
       }
+
+      setIsAutoSyncing(true);
 
       // Fetch all data from cloud and store locally
       const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders"];
@@ -70,13 +128,18 @@ export function useLocalDatabase() {
         console.log(`Cleaned ${cleaned} expired trash items`);
       }
 
+      // Save to file system if access granted
+      await saveToFileSystem();
+
+      setIsAutoSyncing(false);
       setIsInitialized(true);
       await updatePendingCount();
     } catch (error) {
       console.error("Error initializing local data:", error);
+      setIsAutoSyncing(false);
       setIsInitialized(true);
     }
-  }, [updatePendingCount]);
+  }, [updatePendingCount, checkFileSystemAccess, saveToFileSystem]);
 
   // Store credentials locally for offline authentication
   const storeCredentials = useCallback(async (
@@ -412,6 +475,8 @@ export function useLocalDatabase() {
     pendingIds,
     isInitialized,
     userId,
+    isAutoSyncing,
+    hasFileSystemAccess,
     getData,
     insertData,
     updateData,
@@ -423,5 +488,7 @@ export function useLocalDatabase() {
     initializeLocalData,
     storeCredentials,
     verifyOfflineCredentials,
+    requestFileSystemAccess,
+    saveToFileSystem,
   };
 }

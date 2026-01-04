@@ -34,6 +34,7 @@ export interface StoredCredentials {
   userId: string;
   fullName?: string;
   lastLogin: number;
+  isOfflineAccount?: boolean;
 }
 
 // Simple hash function for password storage (not cryptographically secure, but adequate for offline demo)
@@ -154,7 +155,7 @@ class VaultKeepDB {
     });
   }
 
-  async saveCredentials(email: string, password: string, userId: string, fullName?: string): Promise<void> {
+  async saveCredentials(email: string, password: string, userId: string, fullName?: string, isOfflineAccount = false): Promise<void> {
     const db = await this.getCredentialsDB();
     const hashedPassword = await hashPassword(password);
 
@@ -169,11 +170,53 @@ class VaultKeepDB {
         userId,
         fullName,
         lastLogin: Date.now(),
+        isOfflineAccount,
       };
 
       const request = store.put(credentials);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Create offline account (generates a local user ID)
+  async createOfflineAccount(email: string, password: string, fullName: string): Promise<{ userId: string; email: string }> {
+    // Generate a local user ID
+    const userId = `offline_${crypto.randomUUID()}`;
+    
+    // Save credentials locally
+    await this.saveCredentials(email, password, userId, fullName, true);
+    
+    return { userId, email };
+  }
+
+  // Check if there are any offline accounts that need to be synced
+  async getOfflineAccounts(): Promise<StoredCredentials[]> {
+    const allUsers = await this.getAllStoredUsers();
+    return allUsers.filter(user => user.isOfflineAccount);
+  }
+
+  // Mark an offline account as synced (after online registration)
+  async markAccountAsSynced(email: string, newUserId: string): Promise<void> {
+    const db = await this.getCredentialsDB();
+    
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("credentials", "readwrite");
+      const store = transaction.objectStore("credentials");
+      const request = store.get(email.toLowerCase());
+
+      request.onsuccess = () => {
+        const credentials = request.result as StoredCredentials | undefined;
+        if (credentials) {
+          // Update the user ID and mark as synced
+          credentials.userId = newUserId;
+          credentials.isOfflineAccount = false;
+          store.put(credentials);
+        }
+      };
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
     });
   }
 

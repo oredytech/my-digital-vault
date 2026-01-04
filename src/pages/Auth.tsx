@@ -17,6 +17,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [showOfflineSignup, setShowOfflineSignup] = useState(false);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -50,8 +51,17 @@ const Auth = () => {
     setLoading(true);
 
     if (!isOnline) {
-      toast.error("Connexion internet requise pour créer un compte");
-      setLoading(false);
+      // Create offline account
+      try {
+        const { userId } = await vaultKeepDB.createOfflineAccount(email, password, fullName);
+        vaultKeepDB.setCurrentUser(userId);
+        toast.success("Compte hors-ligne créé ! Vos données seront synchronisées à la prochaine connexion.");
+        navigate("/dashboard");
+      } catch (error: any) {
+        toast.error(error.message || "Erreur lors de la création du compte");
+      } finally {
+        setLoading(false);
+      }
       return;
     }
 
@@ -178,7 +188,7 @@ const Auth = () => {
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="signin">Connexion</TabsTrigger>
-                <TabsTrigger value="signup" disabled={!isOnline}>
+                <TabsTrigger value="signup">
                   Inscription
                 </TabsTrigger>
               </TabsList>
@@ -218,6 +228,14 @@ const Auth = () => {
               </TabsContent>
 
               <TabsContent value="signup">
+                {!isOnline && (
+                  <div className="mb-4 bg-amber-500/10 text-amber-500 rounded-lg p-3 text-sm">
+                    <p className="font-medium">Création de compte hors-ligne</p>
+                    <p className="text-xs mt-1 opacity-80">
+                      Vos données seront stockées localement et synchronisées lorsque vous serez connecté.
+                    </p>
+                  </div>
+                )}
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name">Nom complet</Label>
@@ -257,8 +275,9 @@ const Auth = () => {
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    <Shield className="w-4 h-4 mr-2" />
-                    {loading ? "Création..." : "Créer un compte"}
+                    {!isOnline && <WifiOff className="w-4 h-4 mr-2" />}
+                    {isOnline && <Shield className="w-4 h-4 mr-2" />}
+                    {loading ? "Création..." : isOnline ? "Créer un compte" : "Créer un compte hors-ligne"}
                   </Button>
                 </form>
               </TabsContent>

@@ -1,4 +1,4 @@
-import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { NotificationButton } from "./NotificationButton";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { DataBackup } from "./DataBackup";
+import { FileSystemAccess } from "./FileSystemAccess";
 
 type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
 
@@ -26,7 +27,8 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
-  const { isOnline, isSyncing, pendingCount, syncAll } = useLocalDatabase();
+  const [fileSystemOpen, setFileSystemOpen] = useState(false);
+  const { isOnline, isSyncing, pendingCount, syncAll, hasFileSystemAccess, isAutoSyncing } = useLocalDatabase();
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -111,8 +113,19 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
 
         {/* Footer */}
         <div className="p-4 border-t border-sidebar-border space-y-2">
+          {/* Auto-sync indicator */}
+          {isAutoSyncing && (
+            <Button
+              variant="ghost"
+              className="w-full justify-start text-blue-500"
+              disabled
+            >
+              <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+              Téléchargement...
+            </Button>
+          )}
           {/* Sync Button */}
-          {isOnline && pendingCount > 0 && (
+          {isOnline && pendingCount > 0 && !isAutoSyncing && (
             <Button
               variant="outline"
               onClick={syncAll}
@@ -126,7 +139,7 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
               </Badge>
             </Button>
           )}
-          {isOnline && pendingCount === 0 && (
+          {isOnline && pendingCount === 0 && !isAutoSyncing && (
             <Button
               variant="ghost"
               className="w-full justify-start text-green-500"
@@ -146,6 +159,25 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
               Installer l'app
             </Button>
           )}
+          <Button
+            variant="ghost"
+            onClick={() => setFileSystemOpen(true)}
+            className={cn(
+              "w-full justify-start",
+              hasFileSystemAccess 
+                ? "text-green-500 hover:bg-green-500/10" 
+                : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+            )}
+          >
+            <FolderOpen className="w-5 h-5 mr-3" />
+            Stockage local
+            {hasFileSystemAccess && (
+              <Badge variant="secondary" className="ml-auto text-xs">
+                Actif
+              </Badge>
+            )}
+          </Button>
+          <FileSystemAccess open={fileSystemOpen} onOpenChange={setFileSystemOpen} />
           <Button
             variant="ghost"
             onClick={() => setBackupOpen(true)}

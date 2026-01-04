@@ -1,4 +1,4 @@
-import { LogOut, Moon, Sun, Download, RefreshCw, Cloud, HardDrive } from "lucide-react";
+import { LogOut, Moon, Sun, Download, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 import { NotificationButton } from "./NotificationButton";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { DataBackup } from "./DataBackup";
+import { FileSystemAccess } from "./FileSystemAccess";
+import { cn } from "@/lib/utils";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -21,7 +23,8 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
-  const { isOnline, isSyncing, pendingCount, syncAll } = useLocalDatabase();
+  const [fileSystemOpen, setFileSystemOpen] = useState(false);
+  const { isOnline, isSyncing, pendingCount, syncAll, hasFileSystemAccess, isAutoSyncing } = useLocalDatabase();
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
@@ -69,8 +72,19 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
           </div>
         </div>
         <div className="flex items-center space-x-1">
+          {/* Auto-sync indicator */}
+          {isAutoSyncing && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-blue-500"
+              title="Téléchargement..."
+            >
+              <Loader2 className="w-5 h-5 animate-spin" />
+            </Button>
+          )}
           {/* Sync Button */}
-          {isOnline && pendingCount > 0 && (
+          {isOnline && pendingCount > 0 && !isAutoSyncing && (
             <Button
               variant="ghost"
               size="icon"
@@ -88,7 +102,7 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
               </Badge>
             </Button>
           )}
-          {isOnline && pendingCount === 0 && (
+          {isOnline && pendingCount === 0 && !isAutoSyncing && (
             <Button
               variant="ghost"
               size="icon"
@@ -109,6 +123,18 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
               <Download className="w-5 h-5" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setFileSystemOpen(true)}
+            className={cn(
+              hasFileSystemAccess ? "text-green-500" : "text-sidebar-foreground"
+            )}
+            title="Stockage local"
+          >
+            <FolderOpen className="w-5 h-5" />
+          </Button>
+          <FileSystemAccess open={fileSystemOpen} onOpenChange={setFileSystemOpen} />
           <Button
             variant="ghost"
             size="icon"

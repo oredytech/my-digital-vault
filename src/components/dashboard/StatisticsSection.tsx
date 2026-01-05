@@ -3,6 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { BarChart3, PieChartIcon, Bell, Link2, Users, Lightbulb, Loader2, WifiOff } from "lucide-react";
+import { QuickActionsWidget } from "./QuickActionsWidget";
+import { PasswordGenerator } from "./PasswordGenerator";
+import { ActivityTimeline } from "./ActivityTimeline";
+import { SmartSuggestions } from "./SmartSuggestions";
 
 interface CategoryStats {
   name: string;
@@ -139,6 +143,9 @@ export function StatisticsSection() {
         </h2>
       </div>
 
+      {/* Quick Actions Widget */}
+      <QuickActionsWidget />
+
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-card border-border">
@@ -186,6 +193,9 @@ export function StatisticsSection() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Smart Suggestions */}
+      <SmartSuggestions />
 
       {/* Charts Row */}
       <div className="grid md:grid-cols-2 gap-6">
@@ -279,52 +289,61 @@ export function StatisticsSection() {
         </Card>
       </div>
 
-      {/* Upcoming Reminders */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Bell className="w-5 h-5 text-rose-500" />
-            Rappels à venir
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {upcomingReminders.length > 0 ? (
-            <div className="space-y-3">
-              {upcomingReminders.map((reminder) => {
-                const remindDate = new Date(reminder.remind_at);
-                const isOverdue = remindDate < new Date();
-                return (
-                  <div
-                    key={reminder.id}
-                    className={`flex items-center justify-between p-3 rounded-lg ${
-                      isOverdue ? "bg-destructive/10 border border-destructive/20" : "bg-muted/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${isOverdue ? "bg-destructive" : "bg-primary"}`} />
-                      <div>
-                        <p className="font-medium text-foreground text-sm">{reminder.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {reminder.related_type === "account" ? "Compte" : "Autre"}
-                        </p>
+      {/* Bottom Row - Password Generator, Activity Timeline, Reminders */}
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Password Generator */}
+        <PasswordGenerator />
+
+        {/* Activity Timeline */}
+        <ActivityTimeline />
+
+        {/* Upcoming Reminders */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Bell className="w-5 h-5 text-rose-500" />
+              Rappels à venir
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingReminders.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingReminders.map((reminder) => {
+                  const remindDate = new Date(reminder.remind_at);
+                  const isOverdue = remindDate < new Date();
+                  return (
+                    <div
+                      key={reminder.id}
+                      className={`flex items-center justify-between p-3 rounded-lg ${
+                        isOverdue ? "bg-destructive/10 border border-destructive/20" : "bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full ${isOverdue ? "bg-destructive" : "bg-primary"}`} />
+                        <div>
+                          <p className="font-medium text-foreground text-sm">{reminder.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {reminder.related_type === "account" ? "Compte" : "Autre"}
+                          </p>
+                        </div>
                       </div>
+                      <p className={`text-sm ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                        {remindDate.toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
                     </div>
-                    <p className={`text-sm ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
-                      {remindDate.toLocaleDateString("fr-FR", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-center py-4">Aucun rappel à venir</p>
-          )}
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">Aucun rappel à venir</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

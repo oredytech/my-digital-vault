@@ -196,6 +196,20 @@ class VaultKeepDB {
     return allUsers.filter(user => user.isOfflineAccount);
   }
 
+  // Get credentials by email
+  async getCredentialsByEmail(email: string): Promise<StoredCredentials | null> {
+    const db = await this.getCredentialsDB();
+
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction("credentials", "readonly");
+      const store = transaction.objectStore("credentials");
+      const request = store.get(email.toLowerCase());
+
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // Mark an offline account as synced (after online registration)
   async markAccountAsSynced(email: string, newUserId: string): Promise<void> {
     const db = await this.getCredentialsDB();
@@ -218,6 +232,63 @@ class VaultKeepDB {
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
     });
+  }
+
+  // Migrate data from offline account to new cloud account
+  async migrateOfflineData(oldUserId: string, newUserId: string): Promise<void> {
+    const oldDbName = this.getDBName(oldUserId);
+    const newDbName = this.getDBName(newUserId);
+    
+    // Get old database
+    const oldDb = await this.initDB(oldUserId);
+    const tables = ["accounts", "links", "ideas", "categories", "reminders"];
+    
+    for (const table of tables) {
+      try {
+        const oldData = await new Promise<LocalItem[]>((resolve, reject) => {
+          const transaction = oldDb.transaction(table, "readonly");
+          const store = transaction.objectStore(table);
+          const request = store.getAll();
+          
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+        
+        if (oldData.length > 0) {
+          // Update user_id in data and save to new database
+          const newDb = await this.initDB(newUserId);
+          const transaction = newDb.transaction(table, "readwrite");
+          const store = transaction.objectStore(table);
+          
+          for (const item of oldData) {
+            if (item.data) {
+              item.data.user_id = newUserId;
+              item.syncStatus = "pending"; // Mark for sync
+              store.put(item);
+            }
+          }
+          
+          await new Promise((resolve, reject) => {
+            transaction.oncomplete = () => resolve(true);
+            transaction.onerror = () => reject(transaction.error);
+          });
+          
+          // Add pending actions for the migrated data
+          for (const item of oldData) {
+            if (item.data && !item.deleted) {
+              await this.addPendingAction({
+                table,
+                action: "insert",
+                data: { ...item.data, user_id: newUserId },
+                timestamp: Date.now(),
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error migrating ${table}:`, error);
+      }
+    }
   }
 
   async verifyOfflineCredentials(email: string, password: string): Promise<{ valid: boolean; userId?: string; fullName?: string }> {

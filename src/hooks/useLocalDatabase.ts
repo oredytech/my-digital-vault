@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { vaultKeepDB, TrashItem, PendingAction } from "@/lib/indexedDB";
 import { fileSystemStorage } from "@/lib/fileSystemStorage";
@@ -15,6 +15,7 @@ export function useLocalDatabase() {
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [hasFileSystemAccess, setHasFileSystemAccess] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+  const offlineSyncAttempted = useRef(false);
 
   // Update pending count and IDs
   const updatePendingCount = useCallback(async () => {
@@ -75,6 +76,74 @@ export function useLocalDatabase() {
     if (fileSystemStorage.isAvailable()) {
       const hasAccess = await fileSystemStorage.checkPermission();
       setHasFileSystemAccess(hasAccess);
+    }
+  }, []);
+
+  // Sync offline account to cloud
+  const syncOfflineAccountToCloud = useCallback(async (email: string, password: string, fullName: string): Promise<{ success: boolean; newUserId?: string }> => {
+    try {
+      // Get the old offline user ID
+      const credentials = await vaultKeepDB.getCredentialsByEmail(email);
+      if (!credentials || !credentials.isOfflineAccount) {
+        return { success: false };
+      }
+      
+      const oldUserId = credentials.userId;
+      
+      // Register the user in Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: { full_name: fullName }
+        }
+      });
+
+      if (error) {
+        console.error("Error registering offline account:", error);
+        return { success: false };
+      }
+
+      if (!data.user) {
+        return { success: false };
+      }
+
+      const newUserId = data.user.id;
+
+      // Migrate data from offline database to new user database
+      await vaultKeepDB.migrateOfflineData(oldUserId, newUserId);
+
+      // Update credentials to mark as synced
+      await vaultKeepDB.markAccountAsSynced(email, newUserId);
+
+      // Set the new user as current
+      vaultKeepDB.setCurrentUser(newUserId);
+      setUserId(newUserId);
+
+      return { success: true, newUserId };
+    } catch (error) {
+      console.error("Error syncing offline account:", error);
+      return { success: false };
+    }
+  }, []);
+
+  // Check and sync offline accounts when coming online
+  const checkAndSyncOfflineAccounts = useCallback(async () => {
+    if (!navigator.onLine || offlineSyncAttempted.current) return;
+    
+    try {
+      const offlineAccounts = await vaultKeepDB.getOfflineAccounts();
+      
+      if (offlineAccounts.length > 0) {
+        offlineSyncAttempted.current = true;
+        toast.info(
+          `${offlineAccounts.length} compte(s) hors-ligne détecté(s). Connectez-vous pour synchroniser vos données.`,
+          { duration: 8000 }
+        );
+      }
+    } catch (error) {
+      console.error("Error checking offline accounts:", error);
     }
   }, []);
 
@@ -440,6 +509,8 @@ export function useLocalDatabase() {
     const handleOnline = () => {
       setIsOnline(true);
       toast.success("Connexion rétablie");
+      // Check for offline accounts when coming online
+      checkAndSyncOfflineAccounts();
     };
 
     const handleOffline = () => {
@@ -453,7 +524,7 @@ export function useLocalDatabase() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [checkAndSyncOfflineAccounts]);
 
   // Auto-sync when coming back online
   useEffect(() => {
@@ -467,6 +538,13 @@ export function useLocalDatabase() {
   useEffect(() => {
     initializeLocalData();
   }, [initializeLocalData]);
+
+  // Check for offline accounts on mount
+  useEffect(() => {
+    if (isOnline) {
+      checkAndSyncOfflineAccounts();
+    }
+  }, [isOnline, checkAndSyncOfflineAccounts]);
 
   return {
     isOnline,
@@ -490,5 +568,7 @@ export function useLocalDatabase() {
     verifyOfflineCredentials,
     requestFileSystemAccess,
     saveToFileSystem,
+    syncOfflineAccountToCloud,
+    checkAndSyncOfflineAccounts,
   };
 }

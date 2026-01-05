@@ -126,11 +126,11 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
             {/* Dropdown Menu for other actions */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 bg-sidebar-accent hover:bg-sidebar-accent/80">
                   <Menu className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-48 bg-sidebar border-sidebar-border">
                 {!isInstalled && deferredPrompt && (
                   <DropdownMenuItem onClick={handleInstall}>
                     <Download className="w-4 h-4 mr-2" />

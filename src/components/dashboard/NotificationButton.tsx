@@ -4,7 +4,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useEffect } from "react";
 
 interface NotificationButtonProps {
-  variant?: "icon" | "full";
+  variant?: "icon" | "full" | "menu";
 }
 
 export function NotificationButton({ variant = "icon" }: NotificationButtonProps) {
@@ -33,6 +33,18 @@ export function NotificationButton({ variant = "icon" }: NotificationButtonProps
 
   const Icon = permission === "granted" ? BellRing : permission === "denied" ? BellOff : Bell;
   const label = permission === "granted" ? "Notifications actives" : "Activer les notifications";
+
+  if (variant === "menu") {
+    return (
+      <div
+        onClick={handleClick}
+        className="flex items-center px-2 py-1.5 cursor-pointer w-full"
+      >
+        <Icon className={`w-4 h-4 mr-2 ${permission === "granted" ? "text-primary" : ""}`} />
+        {label}
+      </div>
+    );
+  }
 
   if (variant === "full") {
     return (

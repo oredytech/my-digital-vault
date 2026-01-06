@@ -95,37 +95,37 @@ export function MobileHeader({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 bg-sidebar-accent hover:bg-sidebar-accent/80">
-                  <Menu className="w-4 h-4 text-secondary-foreground" />
+                  <Menu className="w-4 h-4 text-sidebar-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-sidebar border-sidebar-border">
-                {!isInstalled && deferredPrompt && <DropdownMenuItem onClick={handleInstall}>
+              <DropdownMenuContent align="end" className="w-48 bg-sidebar border-sidebar-border z-[100]">
+                {!isInstalled && deferredPrompt && <DropdownMenuItem onClick={handleInstall} className="text-sidebar-foreground">
                     <Download className="w-4 h-4 mr-2" />
                     Installer l'app
                   </DropdownMenuItem>}
                 
-                <DropdownMenuItem onClick={() => setFileSystemOpen(true)}>
+                <DropdownMenuItem onClick={() => setFileSystemOpen(true)} className="text-sidebar-foreground">
                   <FolderOpen className={cn("w-4 h-4 mr-2", hasFileSystemAccess && "text-green-500")} />
                   Stockage local
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem onClick={() => setBackupOpen(true)}>
+                <DropdownMenuItem onClick={() => setBackupOpen(true)} className="text-sidebar-foreground">
                   <HardDrive className="w-4 h-4 mr-2" />
                   Sauvegarde
                 </DropdownMenuItem>
                 
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild className="text-sidebar-foreground">
                   <NotificationButton variant="menu" />
                 </DropdownMenuItem>
                 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-sidebar-border" />
                 
-                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="text-sidebar-foreground">
                   {theme === "dark" ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
                   {theme === "dark" ? "Mode clair" : "Mode sombre"}
                 </DropdownMenuItem>
                 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-sidebar-border" />
                 
                 <DropdownMenuItem onClick={onSignOut} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />

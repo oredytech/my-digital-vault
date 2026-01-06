@@ -1,4 +1,4 @@
-import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2 } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2, FileText, Columns } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { DataBackup } from "./DataBackup";
 import { FileSystemAccess } from "./FileSystemAccess";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -66,6 +66,8 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
     { id: "links" as const, label: "Liens", icon: Link2 },
     { id: "accounts" as const, label: "Comptes", icon: Users },
     { id: "ideas" as const, label: "Idées", icon: Lightbulb },
+    { id: "notes" as const, label: "Notes", icon: FileText },
+    { id: "kanban" as const, label: "Kanban", icon: Columns },
     { id: "reminders" as const, label: "Rappels", icon: Bell },
     { id: "categories" as const, label: "Catégories", icon: Tag },
     { id: "trash" as const, label: "Corbeille", icon: Trash2 },

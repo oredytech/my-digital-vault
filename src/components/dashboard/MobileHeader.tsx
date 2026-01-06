@@ -67,8 +67,9 @@ export function MobileHeader({
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center space-x-2 min-w-0 flex-shrink">
             <img src="/logo.webp" alt="VaultKeep Logo" className="w-8 h-8 rounded-lg flex-shrink-0" />
-            <div className="min-w-0">
-              <h1 className="text-base font-bold text-sidebar-foreground truncate">VaultKeep</h1>
+            <div className="min-w-0 flex flex-col">
+              <h1 className="text-base font-bold text-sidebar-foreground truncate leading-tight">VaultKeep</h1>
+              <p className="text-[10px] text-muted-foreground leading-tight">Coffre-fort digital</p>
             </div>
           </div>
           

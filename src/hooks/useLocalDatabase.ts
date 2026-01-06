@@ -4,7 +4,7 @@ import { vaultKeepDB, TrashItem, PendingAction } from "@/lib/indexedDB";
 import { fileSystemStorage } from "@/lib/fileSystemStorage";
 import { toast } from "sonner";
 
-type TableName = "accounts" | "links" | "ideas" | "categories" | "reminders";
+type TableName = "accounts" | "links" | "ideas" | "categories" | "reminders" | "notes";
 
 export function useLocalDatabase() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -34,7 +34,7 @@ export function useLocalDatabase() {
     if (!hasFileSystemAccess) return;
     
     try {
-      const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders"];
+      const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders", "notes"];
       const data: Record<string, any[]> = {};
       
       for (const table of tables) {
@@ -178,7 +178,7 @@ export function useLocalDatabase() {
       setIsAutoSyncing(true);
 
       // Fetch all data from cloud and store locally
-      const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders"];
+      const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders", "notes"];
 
       for (const table of tables) {
         const { data, error } = await supabase

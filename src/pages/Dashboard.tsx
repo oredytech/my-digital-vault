@@ -8,6 +8,8 @@ import { MobileHeader } from "@/components/dashboard/MobileHeader";
 import { LinksSection } from "@/components/dashboard/LinksSection";
 import { AccountsSection } from "@/components/dashboard/AccountsSection";
 import { IdeasSection } from "@/components/dashboard/IdeasSection";
+import { QuickNotesSection } from "@/components/dashboard/QuickNotesSection";
+import { IdeasKanban } from "@/components/dashboard/IdeasKanban";
 import { RemindersSection } from "@/components/dashboard/RemindersSection";
 import { CategoriesSection } from "@/components/dashboard/CategoriesSection";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
@@ -18,7 +20,7 @@ import { vaultKeepDB } from "@/lib/indexedDB";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -126,6 +128,8 @@ const Dashboard = () => {
             {activeSection === "links" && <LinksSection />}
             {activeSection === "accounts" && <AccountsSection />}
             {activeSection === "ideas" && <IdeasSection />}
+            {activeSection === "notes" && <QuickNotesSection />}
+            {activeSection === "kanban" && <IdeasKanban />}
             {activeSection === "reminders" && <RemindersSection />}
             {activeSection === "categories" && <CategoriesSection />}
             {activeSection === "trash" && <TrashSection />}

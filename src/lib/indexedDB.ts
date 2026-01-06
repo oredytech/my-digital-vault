@@ -100,7 +100,7 @@ class VaultKeepDB {
         const db = (event.target as IDBOpenDBRequest).result;
 
         // Create stores for each table
-        const tables = ["accounts", "links", "ideas", "categories", "reminders", "profiles"];
+        const tables = ["accounts", "links", "ideas", "categories", "reminders", "profiles", "notes"];
         tables.forEach((table) => {
           if (!db.objectStoreNames.contains(table)) {
             const store = db.createObjectStore(table, { keyPath: "id" });

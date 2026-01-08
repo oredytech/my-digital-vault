@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { 
-  Command, 
   Mic, 
   MicOff, 
   Sparkles, 
-  Zap, 
   Copy, 
   QrCode,
   Share2,
   Timer,
   Calculator,
-  Palette
+  Palette,
+  X,
+  Delete,
+  Divide,
+  Percent,
+  Plus,
+  Minus,
+  Equal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +26,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -31,57 +37,103 @@ interface QuickActionsWidgetProps {
 export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
   const [isListening, setIsListening] = useState(false);
   const [voiceText, setVoiceText] = useState("");
+  const [showVoiceDialog, setShowVoiceDialog] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [pomodoroActive, setPomodoroActive] = useState(false);
   const [pomodoroTime, setPomodoroTime] = useState(25 * 60);
-  const [calcResult, setCalcResult] = useState("");
-  const [calcInput, setCalcInput] = useState("");
+  const [calcDisplay, setCalcDisplay] = useState("0");
+  const [calcExpression, setCalcExpression] = useState("");
+  const [calcOpen, setCalcOpen] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [selectedColor, setSelectedColor] = useState("#00b4d8");
+  const recognitionRef = useRef<any>(null);
 
-  // Voice recognition
+  const categories = [
+    { id: "link", label: "Nouveau lien", icon: "🔗" },
+    { id: "idea", label: "Nouvelle idée", icon: "💡" },
+    { id: "reminder", label: "Nouveau rappel", icon: "🔔" },
+    { id: "note", label: "Nouvelle note", icon: "📝" },
+    { id: "account", label: "Nouveau compte", icon: "👤" },
+  ];
+
+  // Voice recognition with continuous transcription
   const startVoiceRecognition = () => {
     if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
-      toast.error("La reconnaissance vocale n'est pas supportée");
+      toast.error("La reconnaissance vocale n'est pas supportée par ce navigateur");
       return;
     }
 
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    
     recognition.lang = "fr-FR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.continuous = true;
+    recognition.interimResults = true;
 
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => {
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceText("");
+    };
+    
+    recognition.onend = () => {
       setIsListening(false);
-      toast.error("Erreur de reconnaissance vocale");
+    };
+    
+    recognition.onerror = (event: any) => {
+      setIsListening(false);
+      if (event.error === "not-allowed") {
+        toast.error("Accès au microphone refusé. Veuillez autoriser l'accès dans les paramètres.");
+      } else if (event.error !== "aborted") {
+        toast.error("Erreur de reconnaissance vocale: " + event.error);
+      }
     };
 
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setVoiceText(transcript);
-      processVoiceCommand(transcript);
+      let finalTranscript = "";
+      let interimTranscript = "";
+      
+      for (let i = 0; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + " ";
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      
+      setVoiceText((prev) => {
+        const newText = finalTranscript || interimTranscript;
+        return finalTranscript ? prev + finalTranscript : prev.split(" ").slice(0, -1).join(" ") + " " + interimTranscript;
+      });
     };
 
     recognition.start();
+    setShowVoiceDialog(true);
   };
 
-  const processVoiceCommand = (text: string) => {
-    const lowerText = text.toLowerCase();
-    
-    if (lowerText.includes("ajouter lien") || lowerText.includes("nouveau lien")) {
-      toast.success("Commande détectée: Ajouter un lien");
-      onQuickAdd?.("link", { title: text.replace(/ajouter lien|nouveau lien/gi, "").trim() });
-    } else if (lowerText.includes("ajouter idée") || lowerText.includes("nouvelle idée")) {
-      toast.success("Commande détectée: Ajouter une idée");
-      onQuickAdd?.("idea", { title: text.replace(/ajouter idée|nouvelle idée/gi, "").trim() });
-    } else if (lowerText.includes("rappel") || lowerText.includes("reminder")) {
-      toast.success("Commande détectée: Créer un rappel");
-      onQuickAdd?.("reminder", { title: text.replace(/rappel|reminder/gi, "").trim() });
-    } else {
-      toast.info(`Texte reconnu: "${text}"`);
+  const stopVoiceRecognition = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
     }
+    setIsListening(false);
+  };
+
+  const handleVoiceSubmit = () => {
+    if (!voiceText.trim()) {
+      toast.error("Aucun texte à ajouter");
+      return;
+    }
+    if (!selectedCategory) {
+      toast.error("Veuillez sélectionner une catégorie");
+      return;
+    }
+
+    onQuickAdd?.(selectedCategory, { title: voiceText.trim(), content: voiceText.trim() });
+    toast.success(`Ajouté comme ${categories.find(c => c.id === selectedCategory)?.label}`);
+    setVoiceText("");
+    setSelectedCategory("");
+    setShowVoiceDialog(false);
   };
 
   // Pomodoro timer
@@ -100,7 +152,6 @@ export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
             clearInterval(interval);
             setPomodoroActive(false);
             toast.success("Pomodoro terminé! Prenez une pause.", { duration: 10000 });
-            // Play notification sound
             if ("Notification" in window && Notification.permission === "granted") {
               new Notification("VaultKeep - Pomodoro", {
                 body: "Session terminée! Prenez une pause de 5 minutes.",
@@ -121,19 +172,77 @@ export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Calculator
-  const calculateResult = () => {
-    try {
-      // Safe eval using Function constructor
-      const sanitized = calcInput.replace(/[^0-9+\-*/().%]/g, "");
-      const result = new Function(`return ${sanitized}`)();
-      setCalcResult(String(result));
-    } catch {
-      setCalcResult("Erreur");
+  // Scientific Calculator
+  const calcButtons = [
+    { label: "C", action: "clear", className: "bg-destructive/20 text-destructive hover:bg-destructive/30" },
+    { label: "(", action: "input", value: "(" },
+    { label: ")", action: "input", value: ")" },
+    { label: "%", action: "input", value: "/100", icon: Percent },
+    { label: "7", action: "input", value: "7" },
+    { label: "8", action: "input", value: "8" },
+    { label: "9", action: "input", value: "9" },
+    { label: "÷", action: "input", value: "/", icon: Divide },
+    { label: "4", action: "input", value: "4" },
+    { label: "5", action: "input", value: "5" },
+    { label: "6", action: "input", value: "6" },
+    { label: "×", action: "input", value: "*" },
+    { label: "1", action: "input", value: "1" },
+    { label: "2", action: "input", value: "2" },
+    { label: "3", action: "input", value: "3" },
+    { label: "-", action: "input", value: "-", icon: Minus },
+    { label: "0", action: "input", value: "0" },
+    { label: ".", action: "input", value: "." },
+    { label: "⌫", action: "backspace", icon: Delete },
+    { label: "+", action: "input", value: "+", icon: Plus },
+    { label: "sin", action: "func", value: "Math.sin(" },
+    { label: "cos", action: "func", value: "Math.cos(" },
+    { label: "tan", action: "func", value: "Math.tan(" },
+    { label: "=", action: "calculate", className: "bg-primary text-primary-foreground hover:bg-primary/90", icon: Equal },
+    { label: "√", action: "func", value: "Math.sqrt(" },
+    { label: "x²", action: "power", value: "**2" },
+    { label: "xʸ", action: "input", value: "**" },
+    { label: "π", action: "input", value: "Math.PI" },
+  ];
+
+  const handleCalcButton = (button: typeof calcButtons[0]) => {
+    switch (button.action) {
+      case "clear":
+        setCalcDisplay("0");
+        setCalcExpression("");
+        break;
+      case "backspace":
+        if (calcExpression.length > 0) {
+          const newExpr = calcExpression.slice(0, -1);
+          setCalcExpression(newExpr);
+          setCalcDisplay(newExpr || "0");
+        }
+        break;
+      case "input":
+      case "func":
+      case "power":
+        const newExpr = calcExpression === "0" || calcExpression === "" 
+          ? button.value! 
+          : calcExpression + button.value!;
+        setCalcExpression(newExpr);
+        setCalcDisplay(newExpr.replace(/Math\./g, "").replace(/\*\*/g, "^").replace(/\*/g, "×").replace(/\//g, "÷"));
+        break;
+      case "calculate":
+        try {
+          const result = new Function(`return ${calcExpression}`)();
+          const formattedResult = typeof result === "number" 
+            ? (Number.isInteger(result) ? result.toString() : result.toFixed(8).replace(/\.?0+$/, ""))
+            : "Erreur";
+          setCalcDisplay(formattedResult);
+          setCalcExpression(formattedResult);
+        } catch {
+          setCalcDisplay("Erreur");
+          setCalcExpression("");
+        }
+        break;
     }
   };
 
-  // Generate QR Code (using a free API)
+  // Generate QR Code
   const generateQRCode = async (text: string) => {
     const url = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
@@ -167,18 +276,96 @@ export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
   return (
     <div className="flex flex-wrap gap-2 p-3 bg-card rounded-xl border border-border">
       {/* Voice Command */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={startVoiceRecognition}
-        className={cn(
-          "gap-2 transition-all",
-          isListening && "bg-destructive text-destructive-foreground animate-pulse"
-        )}
-      >
-        {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-        {isListening ? "Écoute..." : "Commande vocale"}
-      </Button>
+      <Dialog open={showVoiceDialog} onOpenChange={(open) => {
+        if (!open) stopVoiceRecognition();
+        setShowVoiceDialog(open);
+      }}>
+        <DialogTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={startVoiceRecognition}
+            className={cn(
+              "gap-2 transition-all",
+              isListening && "bg-destructive text-destructive-foreground animate-pulse"
+            )}
+          >
+            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            {isListening ? "Écoute..." : "Dictée vocale"}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mic className="w-5 h-5 text-primary" />
+              Dictée vocale
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <div className="min-h-[120px] max-h-[200px] overflow-y-auto p-4 bg-muted rounded-xl border-2 border-dashed border-primary/20">
+                {voiceText ? (
+                  <p className="text-foreground">{voiceText}</p>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    {isListening ? "Parlez maintenant..." : "Appuyez sur le bouton pour commencer"}
+                  </p>
+                )}
+              </div>
+              {isListening && (
+                <div className="absolute top-2 right-2 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-xs text-red-500">REC</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant={isListening ? "destructive" : "default"}
+                onClick={isListening ? stopVoiceRecognition : startVoiceRecognition}
+                className="gap-2"
+              >
+                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                {isListening ? "Arrêter" : "Commencer"}
+              </Button>
+              {voiceText && (
+                <Button variant="outline" onClick={() => setVoiceText("")}>
+                  Effacer
+                </Button>
+              )}
+            </div>
+
+            {voiceText && (
+              <div className="space-y-3 pt-2 border-t">
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="rounded-xl">
+                    <SelectValue placeholder="Choisir où ajouter..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        <span className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button 
+                  onClick={handleVoiceSubmit} 
+                  className="w-full rounded-xl"
+                  disabled={!selectedCategory}
+                >
+                  Ajouter
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Pomodoro Timer */}
       <Button
@@ -194,36 +381,45 @@ export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
         {pomodoroActive ? formatTime(pomodoroTime) : "Pomodoro"}
       </Button>
 
-      {/* Calculator */}
-      <Dialog>
+      {/* Scientific Calculator */}
+      <Dialog open={calcOpen} onOpenChange={setCalcOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="sm" className="gap-2">
             <Calculator className="w-4 h-4" />
             Calculatrice
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-card">
-          <DialogHeader>
-            <DialogTitle>Calculatrice rapide</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              value={calcInput}
-              onChange={(e) => setCalcInput(e.target.value)}
-              placeholder="Ex: 15 * 3 + 10"
-              onKeyDown={(e) => e.key === "Enter" && calculateResult()}
-            />
-            <div className="flex gap-2">
-              <Button onClick={calculateResult} className="flex-1">Calculer</Button>
-              <Button variant="outline" onClick={() => { setCalcInput(""); setCalcResult(""); }}>
-                Effacer
-              </Button>
+        <DialogContent className="sm:max-w-md w-[95vw] h-[85vh] sm:h-auto sm:max-h-[90vh] p-0 flex flex-col">
+          <div className="p-4 border-b flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Calculator className="w-5 h-5 text-primary" />
+              Calculatrice
+            </DialogTitle>
+          </div>
+          <div className="flex-1 p-4 flex flex-col overflow-hidden">
+            {/* Display */}
+            <div className="bg-muted rounded-xl p-4 mb-4">
+              <p className="text-right text-3xl sm:text-4xl font-mono font-bold text-foreground truncate">
+                {calcDisplay}
+              </p>
             </div>
-            {calcResult && (
-              <div className="p-4 bg-muted rounded-lg text-center">
-                <span className="text-2xl font-bold text-primary">{calcResult}</span>
-              </div>
-            )}
+            
+            {/* Buttons Grid */}
+            <div className="grid grid-cols-4 gap-2 flex-1">
+              {calcButtons.map((btn, idx) => (
+                <Button
+                  key={idx}
+                  variant="outline"
+                  onClick={() => handleCalcButton(btn)}
+                  className={cn(
+                    "h-12 sm:h-14 text-lg sm:text-xl font-semibold transition-all active:scale-95",
+                    btn.className
+                  )}
+                >
+                  {btn.label}
+                </Button>
+              ))}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -244,13 +440,14 @@ export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
             <Input
               id="qr-input"
               placeholder="URL ou texte à encoder"
+              className="rounded-xl"
             />
             <Button 
               onClick={() => {
                 const input = document.getElementById("qr-input") as HTMLInputElement;
                 if (input?.value) generateQRCode(input.value);
               }}
-              className="w-full"
+              className="w-full rounded-xl"
             >
               Générer le QR Code
             </Button>
@@ -301,15 +498,15 @@ export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
         Partager
       </Button>
 
-      {/* Voice text display */}
-      {voiceText && (
+      {/* Voice text display (when not in dialog) */}
+      {voiceText && !showVoiceDialog && (
         <div className="w-full mt-2 p-2 bg-muted rounded-lg text-sm flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-primary" />
-          <span>"{voiceText}"</span>
+          <span className="flex-1 truncate">"{voiceText}"</span>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 ml-auto"
+            className="h-6 w-6"
             onClick={() => copyToClipboard(voiceText)}
           >
             <Copy className="w-3 h-3" />

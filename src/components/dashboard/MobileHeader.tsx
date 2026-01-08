@@ -1,4 +1,4 @@
-import { LogOut, Moon, Sun, Download, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2, Menu, X } from "lucide-react";
+import { LogOut, Moon, Sun, Download, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
@@ -8,27 +8,26 @@ import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { DataBackup } from "./DataBackup";
 import { FileSystemAccess } from "./FileSystemAccess";
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{
     outcome: "accepted" | "dismissed";
   }>;
 }
+
 interface MobileHeaderProps {
   onSignOut: () => void;
 }
-export function MobileHeader({
-  onSignOut
-}: MobileHeaderProps) {
-  const {
-    theme,
-    setTheme
-  } = useTheme();
+
+export function MobileHeader({ onSignOut }: MobileHeaderProps) {
+  const { theme, setTheme } = useTheme();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
   const [fileSystemOpen, setFileSystemOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const {
     isOnline,
     isSyncing,
@@ -37,6 +36,7 @@ export function MobileHeader({
     hasFileSystemAccess,
     isAutoSyncing
   } = useLocalDatabase();
+
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
@@ -57,12 +57,21 @@ export function MobileHeader({
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
+
   const handleInstall = async () => {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     setDeferredPrompt(null);
+    setDrawerOpen(false);
   };
-  return <>
+
+  const handleMenuAction = (action: () => void) => {
+    action();
+    setDrawerOpen(false);
+  };
+
+  return (
+    <>
       <header className="sticky top-0 bg-sidebar border-b border-sidebar-border z-40 lg:hidden safe-area-top rounded-b-2xl">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center space-x-2 min-w-0 flex-shrink">
@@ -75,69 +84,99 @@ export function MobileHeader({
           
           <div className="flex items-center space-x-1 flex-shrink-0">
             {/* Auto-sync indicator */}
-            {isAutoSyncing && <Button variant="ghost" size="icon" className="text-blue-500 h-8 w-8" title="Téléchargement...">
+            {isAutoSyncing && (
+              <Button variant="ghost" size="icon" className="text-blue-500 h-8 w-8" title="Téléchargement...">
                 <Loader2 className="w-4 h-4 animate-spin" />
-              </Button>}
+              </Button>
+            )}
             
             {/* Sync Button */}
-            {isOnline && pendingCount > 0 && !isAutoSyncing && <Button variant="ghost" size="icon" onClick={syncAll} disabled={isSyncing} className="text-primary relative h-8 w-8" title={`${pendingCount} action(s) en attente`}>
+            {isOnline && pendingCount > 0 && !isAutoSyncing && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={syncAll}
+                disabled={isSyncing}
+                className="text-primary relative h-8 w-8"
+                title={`${pendingCount} action(s) en attente`}
+              >
                 <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
                   {pendingCount}
                 </Badge>
-              </Button>}
+              </Button>
+            )}
             
-            {isOnline && pendingCount === 0 && !isAutoSyncing && <Button variant="ghost" size="icon" className="text-green-500 h-8 w-8" title="Synchronisé">
+            {isOnline && pendingCount === 0 && !isAutoSyncing && (
+              <Button variant="ghost" size="icon" className="text-green-500 h-8 w-8" title="Synchronisé">
                 <Cloud className="w-4 h-4" />
-              </Button>}
+              </Button>
+            )}
 
-            {/* Dropdown Menu for other actions */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            {/* Drawer Menu */}
+            <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+              <DrawerTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 bg-sidebar-accent hover:bg-sidebar-accent/80">
                   <Menu className="w-4 h-4 text-sidebar-foreground" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-sidebar border-sidebar-border z-[100]">
-                {!isInstalled && deferredPrompt && <DropdownMenuItem onClick={handleInstall} className="text-sidebar-foreground">
-                    <Download className="w-4 h-4 mr-2" />
-                    Installer l'app
-                  </DropdownMenuItem>}
-                
-                <DropdownMenuItem onClick={() => setFileSystemOpen(true)} className="text-sidebar-foreground">
-                  <FolderOpen className={cn("w-4 h-4 mr-2", hasFileSystemAccess && "text-green-500")} />
-                  Stockage local
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem onClick={() => setBackupOpen(true)} className="text-sidebar-foreground">
-                  <HardDrive className="w-4 h-4 mr-2" />
-                  Sauvegarde
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem asChild className="text-sidebar-foreground">
-                  <NotificationButton variant="menu" />
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator className="bg-sidebar-border" />
-                
-                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="text-sidebar-foreground">
-                  {theme === "dark" ? <Sun className="w-4 h-4 mr-2" /> : <Moon className="w-4 h-4 mr-2" />}
-                  {theme === "dark" ? "Mode clair" : "Mode sombre"}
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator className="bg-sidebar-border" />
-                
-                <DropdownMenuItem onClick={onSignOut} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Déconnexion
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </DrawerTrigger>
+              <DrawerContent className="bg-sidebar border-sidebar-border">
+                <div className="p-4 pb-8">
+                  <h3 className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">Menu</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    {!isInstalled && deferredPrompt && (
+                      <button
+                        onClick={handleInstall}
+                        className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                      >
+                        <Download className="w-6 h-6 mb-2" />
+                        <span className="text-sm font-medium">Installer</span>
+                      </button>
+                    )}
+                    
+                    <button
+                      onClick={() => handleMenuAction(() => setFileSystemOpen(true))}
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                    >
+                      <FolderOpen className={cn("w-6 h-6 mb-2", hasFileSystemAccess && "text-green-500")} />
+                      <span className="text-sm font-medium">Stockage</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleMenuAction(() => setBackupOpen(true))}
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                    >
+                      <HardDrive className="w-6 h-6 mb-2" />
+                      <span className="text-sm font-medium">Sauvegarde</span>
+                    </button>
+                    
+                    <NotificationButton variant="drawer" onAction={() => setDrawerOpen(false)} />
+                    
+                    <button
+                      onClick={() => handleMenuAction(() => setTheme(theme === "dark" ? "light" : "dark"))}
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                    >
+                      {theme === "dark" ? <Sun className="w-6 h-6 mb-2" /> : <Moon className="w-6 h-6 mb-2" />}
+                      <span className="text-sm font-medium">{theme === "dark" ? "Clair" : "Sombre"}</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleMenuAction(onSignOut)}
+                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+                    >
+                      <LogOut className="w-6 h-6 mb-2" />
+                      <span className="text-sm font-medium">Déconnexion</span>
+                    </button>
+                  </div>
+                </div>
+              </DrawerContent>
+            </Drawer>
           </div>
         </div>
       </header>
       
       <FileSystemAccess open={fileSystemOpen} onOpenChange={setFileSystemOpen} />
       <DataBackup open={backupOpen} onOpenChange={setBackupOpen} />
-    </>;
+    </>
+  );
 }

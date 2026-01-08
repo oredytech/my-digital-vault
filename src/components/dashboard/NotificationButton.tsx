@@ -4,10 +4,11 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useEffect } from "react";
 
 interface NotificationButtonProps {
-  variant?: "icon" | "full" | "menu";
+  variant?: "icon" | "full" | "menu" | "drawer";
+  onAction?: () => void;
 }
 
-export function NotificationButton({ variant = "icon" }: NotificationButtonProps) {
+export function NotificationButton({ variant = "icon", onAction }: NotificationButtonProps) {
   const { permission, isSupported, requestPermission, checkUrgentReminders } = useNotifications();
 
   useEffect(() => {
@@ -29,10 +30,23 @@ export function NotificationButton({ variant = "icon" }: NotificationButtonProps
     } else {
       checkUrgentReminders();
     }
+    onAction?.();
   };
 
   const Icon = permission === "granted" ? BellRing : permission === "denied" ? BellOff : Bell;
-  const label = permission === "granted" ? "Notifications actives" : "Activer les notifications";
+  const label = permission === "granted" ? "Notifications" : "Notifications";
+
+  if (variant === "drawer") {
+    return (
+      <button
+        onClick={handleClick}
+        className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+      >
+        <Icon className={`w-6 h-6 mb-2 ${permission === "granted" ? "text-primary" : ""}`} />
+        <span className="text-sm font-medium">{label}</span>
+      </button>
+    );
+  }
 
   if (variant === "menu") {
     return (

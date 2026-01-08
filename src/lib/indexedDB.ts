@@ -1,6 +1,6 @@
 // IndexedDB Database for VaultKeep - Persistent local storage with multi-user support
 const DB_PREFIX = "vaultkeep_";
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 export interface LocalItem {
   id: string;

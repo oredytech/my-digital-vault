@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, FileText, Trash2, Pin, PinOff, Pencil, Search, Eye } from "lucide-react";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { PendingBadge } from "./PendingBadge";
+import { RichTextEditor } from "./RichTextEditor";
 import { cn } from "@/lib/utils";
 
 interface Note {
@@ -178,20 +178,20 @@ export function QuickNotesSection() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6 px-1">
+      <div className="flex flex-col gap-3">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Notes Rapides</h2>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Prenez des notes avec support Markdown</p>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Notes Rapides</h2>
+          <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Prenez des notes avec support Markdown</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <div className="relative flex-1 sm:flex-none">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 w-full sm:w-[200px] rounded-xl"
+              className="pl-9 w-full rounded-xl text-sm"
             />
           </div>
           <Dialog open={open} onOpenChange={(isOpen) => {
@@ -199,14 +199,14 @@ export function QuickNotesSection() {
             if (!isOpen) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button className="shadow-vault rounded-xl">
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle note
+              <Button className="shadow-vault rounded-xl shrink-0" size="sm">
+                <Plus className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Nouvelle note</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto mx-auto">
               <DialogHeader>
-                <DialogTitle>{editingNote ? "Modifier la note" : "Nouvelle note"}</DialogTitle>
+                <DialogTitle className="text-foreground">{editingNote ? "Modifier la note" : "Nouvelle note"}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
@@ -217,50 +217,28 @@ export function QuickNotesSection() {
                     className="rounded-xl"
                   />
                 </div>
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-1.5 sm:gap-2 flex-wrap">
                   {NOTE_COLORS.map((color) => (
                     <button
                       key={color.value || "default"}
                       type="button"
                       onClick={() => setFormData({ ...formData, color: color.value })}
                       className={cn(
-                        "w-8 h-8 rounded-lg border-2 transition-all",
+                        "w-7 h-7 sm:w-8 sm:h-8 rounded-lg border-2 transition-all",
                         color.class,
-                        formData.color === color.value ? "ring-2 ring-primary ring-offset-2" : ""
+                        formData.color === color.value ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
                       )}
                       title={color.label}
                     />
                   ))}
                 </div>
                 <div className="space-y-2">
-                  <Textarea
-                    placeholder="Écrivez votre note en Markdown...
-
-Syntaxe supportée:
-# Titre
-**gras** *italique* ~~barré~~
-- liste
-1. liste numérotée
-> citation
-`code`
-[lien](url)
-[ ] tâche
-[x] tâche terminée"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    rows={12}
-                    className="rounded-xl font-mono text-sm"
+                  <RichTextEditor
+                    content={formData.content}
+                    onChange={(content) => setFormData({ ...formData, content })}
+                    placeholder="Écrivez votre note..."
                   />
                 </div>
-                {formData.content && (
-                  <div className="border rounded-xl p-4 max-h-[200px] overflow-y-auto">
-                    <p className="text-xs text-muted-foreground mb-2">Aperçu:</p>
-                    <div 
-                      className="prose prose-sm dark:prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(formData.content) }}
-                    />
-                  </div>
-                )}
                 <Button type="submit" className="w-full rounded-xl">
                   {editingNote ? "Modifier" : "Créer"}
                 </Button>
@@ -270,72 +248,72 @@ Syntaxe supportée:
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {filteredNotes.map((note) => {
           const isPending = pendingIds.has(note.id);
           return (
             <Card 
               key={note.id} 
               className={cn(
-                "hover:shadow-vault transition-all rounded-xl relative group",
+                "hover:shadow-vault transition-all rounded-xl relative group overflow-hidden",
                 getNoteColorClass(note.color)
               )}
             >
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 p-3 sm:p-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     {note.is_pinned && (
-                      <Pin className="w-4 h-4 text-primary flex-shrink-0" />
+                      <Pin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary flex-shrink-0" />
                     )}
-                    <CardTitle className="text-base truncate">{note.title}</CardTitle>
+                    <CardTitle className="text-sm sm:text-base truncate text-foreground">{note.title}</CardTitle>
                     <PendingBadge isPending={isPending} />
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-0.5 sm:gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => openPreview(note)}
-                      className="h-7 w-7"
+                      className="h-6 w-6 sm:h-7 sm:w-7"
                     >
-                      <Eye className="w-3.5 h-3.5" />
+                      <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => togglePin(note)}
-                      className="h-7 w-7"
+                      className="h-6 w-6 sm:h-7 sm:w-7"
                     >
                       {note.is_pinned ? (
-                        <PinOff className="w-3.5 h-3.5" />
+                        <PinOff className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       ) : (
-                        <Pin className="w-3.5 h-3.5" />
+                        <Pin className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       )}
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => openEditDialog(note)}
-                      className="h-7 w-7"
+                      className="h-6 w-6 sm:h-7 sm:w-7"
                     >
-                      <Pencil className="w-3.5 h-3.5" />
+                      <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleDelete(note.id)}
-                      className="h-7 w-7 text-destructive"
+                      className="h-6 w-6 sm:h-7 sm:w-7 text-destructive"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 sm:p-4 pt-0 sm:pt-0">
                 <div 
-                  className="text-sm text-muted-foreground line-clamp-4 prose prose-sm dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content.slice(0, 200)) }}
+                  className="text-xs sm:text-sm text-muted-foreground line-clamp-3 sm:line-clamp-4 prose prose-sm dark:prose-invert max-w-none break-words"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content.slice(0, 150)) }}
                 />
-                <p className="text-xs text-muted-foreground mt-3">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-2 sm:mt-3">
                   {new Date(note.updated_at).toLocaleDateString("fr-FR", {
                     day: "numeric",
                     month: "short",
@@ -350,27 +328,27 @@ Syntaxe supportée:
       </div>
 
       {filteredNotes.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">
+        <div className="text-center py-8 sm:py-12">
+          <FileText className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-3 sm:mb-4" />
+          <p className="text-muted-foreground text-sm sm:text-base">
             {searchQuery ? "Aucune note trouvée" : "Aucune note"}
           </p>
-          <p className="text-sm text-muted-foreground mt-1">Créez votre première note avec support Markdown</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">Créez votre première note</p>
         </div>
       )}
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-foreground">
               {previewNote?.is_pinned && <Pin className="w-4 h-4 text-primary" />}
               {previewNote?.title}
             </DialogTitle>
           </DialogHeader>
           {previewNote && (
             <div 
-              className="prose prose-sm dark:prose-invert max-w-none"
+              className="prose prose-sm dark:prose-invert max-w-none text-foreground break-words"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(previewNote.content) }}
             />
           )}

@@ -169,29 +169,29 @@ export function IdeasKanban() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-4 sm:space-y-6 px-1">
+      <div className="flex flex-col gap-3">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Tableau Kanban</h2>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Gérez vos idées visuellement</p>
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">Tableau Kanban</h2>
+          <p className="text-muted-foreground mt-1 text-xs sm:text-sm">Gérez vos idées visuellement</p>
         </div>
         <Dialog open={open} onOpenChange={(isOpen) => {
           setOpen(isOpen);
           if (!isOpen) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="shadow-vault rounded-xl">
-              <Plus className="w-4 h-4 mr-2" />
-              Nouvelle idée
+            <Button className="shadow-vault rounded-xl w-full sm:w-auto" size="sm">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="sm:inline">Nouvelle idée</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="w-[95vw] max-w-md max-h-[85vh] overflow-y-auto mx-auto">
             <DialogHeader>
-              <DialogTitle>Nouvelle idée</DialogTitle>
+              <DialogTitle className="text-foreground">Nouvelle idée</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Titre *</Label>
+                <Label htmlFor="title" className="text-foreground">Titre *</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -201,7 +201,7 @@ export function IdeasKanban() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="status">Statut</Label>
+                <Label htmlFor="status" className="text-foreground">Statut</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value: KanbanStatus) => setFormData({ ...formData, status: value })}
@@ -222,7 +222,7 @@ export function IdeasKanban() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="category">Catégorie</Label>
+                <Label htmlFor="category" className="text-foreground">Catégorie</Label>
                 <Select
                   value={formData.category_id}
                   onValueChange={(value) => setFormData({ ...formData, category_id: value })}
@@ -240,7 +240,7 @@ export function IdeasKanban() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="content">Description</Label>
+                <Label htmlFor="content" className="text-foreground">Description</Label>
                 <Textarea
                   id="content"
                   value={formData.content}
@@ -257,8 +257,8 @@ export function IdeasKanban() {
         </Dialog>
       </div>
 
-      {/* Kanban Board - Responsive */}
-      <div className="flex flex-col lg:flex-row gap-4 overflow-x-auto pb-4">
+      {/* Kanban Board - Mobile horizontal scroll, Desktop grid */}
+      <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-1 px-1 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:overflow-visible">
         {KANBAN_COLUMNS.map((column) => {
           const columnIdeas = getIdeasByStatus(column.id);
           const Icon = column.icon;
@@ -266,18 +266,18 @@ export function IdeasKanban() {
           return (
             <div 
               key={column.id} 
-              className="flex-1 min-w-[280px] lg:min-w-0"
+              className="flex-shrink-0 w-[85vw] sm:w-[300px] lg:w-auto lg:flex-1 snap-center"
             >
-              <div className="bg-muted/30 rounded-xl p-3">
-                <div className="flex items-center gap-2 mb-3 px-1">
-                  <Icon className={cn("w-5 h-5", column.color)} />
-                  <h3 className="font-semibold text-foreground">{column.label}</h3>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full ml-auto">
+              <div className="bg-muted/30 rounded-xl p-2 sm:p-3 h-full">
+                <div className="flex items-center gap-2 mb-2 sm:mb-3 px-1">
+                  <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5", column.color)} />
+                  <h3 className="font-semibold text-foreground text-sm sm:text-base">{column.label}</h3>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground bg-muted px-1.5 sm:px-2 py-0.5 rounded-full ml-auto">
                     {columnIdeas.length}
                   </span>
                 </div>
                 
-                <ScrollArea className="h-[60vh] lg:h-[65vh]">
+                <ScrollArea className="h-[55vh] sm:h-[60vh] lg:h-[65vh]">
                   <div className="space-y-2 pr-2">
                     {columnIdeas.map((idea) => {
                       const category = getCategoryForIdea(idea.category_id);
@@ -287,56 +287,56 @@ export function IdeasKanban() {
                       return (
                         <Card 
                           key={idea.id} 
-                          className="hover:shadow-md transition-shadow rounded-xl cursor-grab active:cursor-grabbing"
+                          className="hover:shadow-md transition-shadow rounded-xl bg-card"
                         >
-                          <CardContent className="p-3 space-y-2">
+                          <CardContent className="p-2 sm:p-3 space-y-1.5 sm:space-y-2">
                             <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                <span className="font-medium text-sm truncate">{idea.title}</span>
+                              <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+                                <GripVertical className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
+                                <span className="font-medium text-xs sm:text-sm truncate text-foreground">{idea.title}</span>
                               </div>
                               <PendingBadge isPending={isPending} />
                             </div>
                             
                             {idea.content && (
-                              <p className="text-xs text-muted-foreground line-clamp-2 pl-6">
+                              <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-2 pl-5 sm:pl-6">
                                 {idea.content}
                               </p>
                             )}
                             
                             {category && (
-                              <div className="flex items-center pl-6">
-                                <Tag className="w-3 h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />
-                                <span className="text-xs" style={{ color: category.color || '#06b6d4' }}>
+                              <div className="flex items-center pl-5 sm:pl-6">
+                                <Tag className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" style={{ color: category.color || '#06b6d4' }} />
+                                <span className="text-[10px] sm:text-xs" style={{ color: category.color || '#06b6d4' }}>
                                   {category.name}
                                 </span>
                               </div>
                             )}
                             
                             {idea.ai_suggestions && (
-                              <div className="pl-6 pt-1 border-t">
-                                <div className="flex items-center text-xs text-primary">
-                                  <Sparkles className="w-3 h-3 mr-1" />
+                              <div className="pl-5 sm:pl-6 pt-1 border-t border-border">
+                                <div className="flex items-center text-[10px] sm:text-xs text-primary">
+                                  <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                                   IA disponible
                                 </div>
                               </div>
                             )}
                             
-                            <div className="flex items-center justify-between pt-1 pl-6">
-                              <div className="flex gap-1">
+                            <div className="flex items-center justify-between pt-1 pl-5 sm:pl-6">
+                              <div className="flex gap-0.5 sm:gap-1">
                                 {!idea.ai_suggestions && (
                                   <Button
                                     variant="ghost"
                                     size="icon"
                                     onClick={() => generateSuggestions(idea)}
                                     disabled={generatingSuggestions === idea.id || !isOnline}
-                                    className="h-6 w-6"
+                                    className="h-5 w-5 sm:h-6 sm:w-6"
                                     title="Enrichir avec l'IA"
                                   >
                                     {generatingSuggestions === idea.id ? (
-                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <Loader2 className="w-2.5 h-2.5 sm:w-3 sm:h-3 animate-spin" />
                                     ) : (
-                                      <Sparkles className="w-3 h-3" />
+                                      <Sparkles className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                     )}
                                   </Button>
                                 )}
@@ -344,9 +344,9 @@ export function IdeasKanban() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => handleDelete(idea.id)}
-                                  className="h-6 w-6 text-destructive"
+                                  className="h-5 w-5 sm:h-6 sm:w-6 text-destructive"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Trash2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                                 </Button>
                               </div>
                               
@@ -355,10 +355,11 @@ export function IdeasKanban() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => moveIdea(idea.id, nextStatus)}
-                                  className="h-6 text-xs px-2"
+                                  className="h-5 sm:h-6 text-[10px] sm:text-xs px-1.5 sm:px-2"
                                 >
-                                  <ArrowRight className="w-3 h-3 mr-1" />
-                                  {KANBAN_COLUMNS.find(c => c.id === nextStatus)?.label}
+                                  <ArrowRight className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-0.5 sm:mr-1" />
+                                  <span className="hidden sm:inline">{KANBAN_COLUMNS.find(c => c.id === nextStatus)?.label}</span>
+                                  <span className="sm:hidden">→</span>
                                 </Button>
                               )}
                             </div>
@@ -368,9 +369,9 @@ export function IdeasKanban() {
                     })}
                     
                     {columnIdeas.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Lightbulb className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-xs">Aucune idée</p>
+                      <div className="text-center py-6 sm:py-8 text-muted-foreground">
+                        <Lightbulb className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-[10px] sm:text-xs">Aucune idée</p>
                       </div>
                     )}
                   </div>

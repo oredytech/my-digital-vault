@@ -129,10 +129,10 @@ export function StatisticsSection() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-          <BarChart3 className="w-6 h-6 text-primary" />
+    <div className="space-y-4 sm:space-y-6 animate-fade-in p-2 sm:p-0 max-w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
           Statistiques
           {!isOnline && (
             <span className="flex items-center gap-1 text-xs font-normal text-amber-500 bg-amber-500/10 rounded-full px-2 py-1">
@@ -144,194 +144,212 @@ export function StatisticsSection() {
       </div>
 
       {/* Quick Actions Widget */}
-      <QuickActionsWidget />
+      <div className="w-full overflow-hidden">
+        <QuickActionsWidget />
+      </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Link2 className="w-5 h-5 text-primary" />
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+              <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalCounts.links}</p>
-              <p className="text-sm text-muted-foreground">Liens</p>
+            <div className="min-w-0">
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.links}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Liens</p>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/10">
-              <Users className="w-5 h-5 text-purple-500" />
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 rounded-lg bg-purple-500/10 shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalCounts.accounts}</p>
-              <p className="text-sm text-muted-foreground">Comptes</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10">
-              <Lightbulb className="w-5 h-5 text-amber-500" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalCounts.ideas}</p>
-              <p className="text-sm text-muted-foreground">Idées</p>
+            <div className="min-w-0">
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.accounts}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Comptes</p>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-card border-border">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-rose-500/10">
-              <Bell className="w-5 h-5 text-rose-500" />
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 rounded-lg bg-amber-500/10 shrink-0">
+              <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
             </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalCounts.reminders}</p>
-              <p className="text-sm text-muted-foreground">Rappels actifs</p>
+            <div className="min-w-0">
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.ideas}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Idées</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-card border-border">
+          <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
+            <div className="p-2 rounded-lg bg-rose-500/10 shrink-0">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.reminders}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Rappels actifs</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Smart Suggestions */}
-      <SmartSuggestions />
+      <div className="w-full overflow-hidden">
+        <SmartSuggestions />
+      </div>
 
       {/* Charts Row */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Bar Chart - Items per Category */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
+        <Card className="bg-card border-border w-full overflow-hidden">
+          <CardHeader className="p-3 sm:pb-2 sm:p-6">
+            <CardTitle className="text-sm sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               Éléments par catégorie
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6 pt-0">
             {categoryStats.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={categoryStats} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="name" 
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} 
-                    tickLine={{ stroke: "hsl(var(--border))" }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                  />
-                  <YAxis 
-                    tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} 
-                    tickLine={{ stroke: "hsl(var(--border))" }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "hsl(var(--card))", 
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      color: "hsl(var(--foreground))"
-                    }} 
-                  />
-                  <Bar dataKey="links" name="Liens" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="accounts" name="Comptes" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="ideas" name="Idées" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="w-full h-[200px] sm:h-[250px] -ml-2 sm:ml-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={categoryStats} margin={{ top: 10, right: 5, left: -25, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="name" 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} 
+                      tickLine={{ stroke: "hsl(var(--border))" }}
+                      axisLine={{ stroke: "hsl(var(--border))" }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={50}
+                      interval={0}
+                    />
+                    <YAxis 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} 
+                      tickLine={{ stroke: "hsl(var(--border))" }}
+                      axisLine={{ stroke: "hsl(var(--border))" }}
+                      width={30}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--card))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
+                        fontSize: "12px"
+                      }} 
+                    />
+                    <Bar dataKey="links" name="Liens" fill="#06b6d4" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="accounts" name="Comptes" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="ideas" name="Idées" fill="#f59e0b" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
-              <p className="text-muted-foreground text-center py-8">Aucune donnée à afficher</p>
+              <p className="text-muted-foreground text-center py-8 text-sm">Aucune donnée à afficher</p>
             )}
           </CardContent>
         </Card>
 
         {/* Pie Chart - Distribution */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <PieChartIcon className="w-5 h-5 text-primary" />
+        <Card className="bg-card border-border w-full overflow-hidden">
+          <CardHeader className="p-3 sm:pb-2 sm:p-6">
+            <CardTitle className="text-sm sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <PieChartIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               Répartition globale
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6 pt-0">
             {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    labelLine={false}
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: "hsl(var(--card))", 
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      color: "hsl(var(--foreground))"
-                    }} 
-                  />
-                  <Legend 
-                    wrapperStyle={{ color: "hsl(var(--foreground))" }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="w-full h-[200px] sm:h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={35}
+                      outerRadius={60}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      labelLine={false}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: "hsl(var(--card))", 
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--foreground))",
+                        fontSize: "12px"
+                      }} 
+                    />
+                    <Legend 
+                      wrapperStyle={{ color: "hsl(var(--foreground))", fontSize: "12px" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
-              <p className="text-muted-foreground text-center py-8">Aucune donnée à afficher</p>
+              <p className="text-muted-foreground text-center py-8 text-sm">Aucune donnée à afficher</p>
             )}
           </CardContent>
         </Card>
       </div>
 
       {/* Bottom Row - Password Generator, Activity Timeline, Reminders */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Password Generator */}
-        <PasswordGenerator />
+        <div className="w-full overflow-hidden">
+          <PasswordGenerator />
+        </div>
 
         {/* Activity Timeline */}
-        <ActivityTimeline />
+        <div className="w-full overflow-hidden">
+          <ActivityTimeline />
+        </div>
 
         {/* Upcoming Reminders */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <Bell className="w-5 h-5 text-rose-500" />
+        <Card className="bg-card border-border w-full overflow-hidden md:col-span-2 lg:col-span-1">
+          <CardHeader className="p-3 sm:pb-2 sm:p-6">
+            <CardTitle className="text-sm sm:text-lg font-semibold text-foreground flex items-center gap-2">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" />
               Rappels à venir
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-3 sm:p-6 pt-0">
             {upcomingReminders.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {upcomingReminders.map((reminder) => {
                   const remindDate = new Date(reminder.remind_at);
                   const isOverdue = remindDate < new Date();
                   return (
                     <div
                       key={reminder.id}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
+                      className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
                         isOverdue ? "bg-destructive/10 border border-destructive/20" : "bg-muted/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${isOverdue ? "bg-destructive" : "bg-primary"}`} />
-                        <div>
-                          <p className="font-medium text-foreground text-sm">{reminder.title}</p>
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${isOverdue ? "bg-destructive" : "bg-primary"}`} />
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground text-xs sm:text-sm truncate">{reminder.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {reminder.related_type === "account" ? "Compte" : "Autre"}
                           </p>
                         </div>
                       </div>
-                      <p className={`text-sm ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                      <p className={`text-xs sm:text-sm shrink-0 ml-2 ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
                         {remindDate.toLocaleDateString("fr-FR", {
                           day: "numeric",
                           month: "short",
-                          year: "numeric",
                         })}
                       </p>
                     </div>
@@ -339,7 +357,7 @@ export function StatisticsSection() {
                 })}
               </div>
             ) : (
-              <p className="text-muted-foreground text-center py-4">Aucun rappel à venir</p>
+              <p className="text-muted-foreground text-center py-4 text-sm">Aucun rappel à venir</p>
             )}
           </CardContent>
         </Card>

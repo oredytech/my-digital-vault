@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Trash2, GripVertical, Save, X } from "lucide-react";
+import { Plus, Trash2, GripVertical, Save, X, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,7 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface Survey {
@@ -53,6 +55,10 @@ export function SurveyBuilder({ survey, onSave, onCancel }: SurveyBuilderProps) 
   const [description, setDescription] = useState(survey?.description || "");
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showAIDialog, setShowAIDialog] = useState(false);
+  const [aiTopic, setAiTopic] = useState("");
+  const [aiQuestionCount, setAiQuestionCount] = useState(5);
+  const [generating, setGenerating] = useState(false);
   const { insertData, updateData, getData, deleteData } = useLocalDatabase();
 
   useEffect(() => {
@@ -136,6 +142,64 @@ export function SurveyBuilder({ survey, onSave, onCancel }: SurveyBuilderProps) 
     updateQuestion(questionIndex, { options });
   };
 
+  const handleGenerateWithAI = async () => {
+    if (!aiTopic.trim()) {
+      toast.error("Veuillez entrer un sujet pour l'enquête");
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-survey", {
+        body: { topic: aiTopic, questionCount: aiQuestionCount }
+      });
+
+      if (error) {
+        console.error("AI generation error:", error);
+        if (error.message?.includes("429")) {
+          toast.error("Limite de requêtes atteinte, réessayez plus tard.");
+        } else if (error.message?.includes("402")) {
+          toast.error("Crédits insuffisants pour la génération IA.");
+        } else {
+          toast.error("Erreur lors de la génération IA");
+        }
+        return;
+      }
+
+      if (data) {
+        // Apply generated data
+        setTitle(data.title || aiTopic);
+        setDescription(data.description || "");
+        
+        const generatedQuestions: SurveyQuestion[] = (data.questions || []).map((q: any, index: number) => ({
+          id: crypto.randomUUID(),
+          survey_id: survey?.id || "",
+          question_text: q.question_text,
+          question_type: q.question_type as SurveyQuestion["question_type"],
+          options: q.options,
+          question_order: index,
+          is_required: q.is_required || false,
+          isNew: true,
+        }));
+
+        if (generatedQuestions.length > 0) {
+          setQuestions(generatedQuestions);
+          toast.success(`${generatedQuestions.length} questions générées par l'IA`);
+        } else {
+          toast.error("Aucune question générée");
+        }
+      }
+
+      setShowAIDialog(false);
+      setAiTopic("");
+    } catch (error) {
+      console.error("Error generating survey:", error);
+      toast.error("Erreur lors de la génération");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!title.trim()) {
       toast.error("Veuillez entrer un titre pour l'enquête");
@@ -201,6 +265,29 @@ export function SurveyBuilder({ survey, onSave, onCancel }: SurveyBuilderProps) 
 
   return (
     <div className="space-y-6">
+      {/* AI Generation Button */}
+      {!survey && (
+        <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <CardContent className="py-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/20">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Générer avec l'IA</p>
+                  <p className="text-xs text-muted-foreground">Créez des questions automatiquement à partir d'un sujet</p>
+                </div>
+              </div>
+              <Button onClick={() => setShowAIDialog(true)} variant="outline" size="sm" className="shrink-0">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Générer
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Survey Info */}
       <div className="space-y-4">
         <div>
@@ -352,6 +439,67 @@ export function SurveyBuilder({ survey, onSave, onCancel }: SurveyBuilderProps) 
           )}
         </Button>
       </div>
+
+      {/* AI Generation Dialog */}
+      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Générer avec l'IA
+            </DialogTitle>
+            <DialogDescription>
+              Décrivez le sujet de votre enquête et l'IA créera des questions pertinentes.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="ai-topic">Sujet de l'enquête *</Label>
+              <Input
+                id="ai-topic"
+                value={aiTopic}
+                onChange={(e) => setAiTopic(e.target.value)}
+                placeholder="Ex: Satisfaction des employés, Feedback produit..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ai-count">Nombre de questions</Label>
+              <Select
+                value={aiQuestionCount.toString()}
+                onValueChange={(v) => setAiQuestionCount(parseInt(v))}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[3, 5, 7, 10].map(n => (
+                    <SelectItem key={n} value={n.toString()}>{n} questions</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAIDialog(false)} disabled={generating}>
+              Annuler
+            </Button>
+            <Button onClick={handleGenerateWithAI} disabled={generating || !aiTopic.trim()}>
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Génération...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Générer
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

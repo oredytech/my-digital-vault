@@ -1,6 +1,6 @@
 // IndexedDB Database for VaultKeep - Persistent local storage with multi-user support
 const DB_PREFIX = "vaultkeep_";
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 export interface LocalItem {
   id: string;
@@ -100,7 +100,7 @@ class VaultKeepDB {
         const db = (event.target as IDBOpenDBRequest).result;
 
         // Create stores for each table
-        const tables = ["accounts", "links", "ideas", "categories", "reminders", "profiles", "notes"];
+        const tables = ["accounts", "links", "ideas", "categories", "reminders", "profiles", "notes", "surveys", "survey_questions", "survey_responses"];
         tables.forEach((table) => {
           if (!db.objectStoreNames.contains(table)) {
             const store = db.createObjectStore(table, { keyPath: "id" });

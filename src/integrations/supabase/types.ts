@@ -318,6 +318,112 @@ export type Database = {
           },
         ]
       }
+      survey_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean | null
+          options: Json | null
+          question_order: number
+          question_text: string
+          question_type: string
+          survey_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          question_order?: number
+          question_text: string
+          question_type?: string
+          survey_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          options?: Json | null
+          question_order?: number
+          question_text?: string
+          question_type?: string
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          respondent_id: string | null
+          survey_id: string
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: string
+          respondent_id?: string | null
+          survey_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          respondent_id?: string | null
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_published: boolean | null
+          share_code: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          share_code?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_published?: boolean | null
+          share_code?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

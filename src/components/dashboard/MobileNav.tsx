@@ -1,10 +1,10 @@
-import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
 
 interface MobileNavProps {
   activeSection: ActiveSection;
@@ -24,6 +24,7 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
   const moreItems = [
     { id: "notes" as const, label: "Notes", icon: FileText },
     { id: "kanban" as const, label: "Kanban", icon: Columns },
+    { id: "surveys" as const, label: "Enquêtes", icon: ClipboardList },
     { id: "reminders" as const, label: "Rappels", icon: Bell },
     { id: "trash" as const, label: "Corbeille", icon: Trash2 },
   ];

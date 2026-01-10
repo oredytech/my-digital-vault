@@ -14,13 +14,14 @@ import { RemindersSection } from "@/components/dashboard/RemindersSection";
 import { CategoriesSection } from "@/components/dashboard/CategoriesSection";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { TrashSection } from "@/components/dashboard/TrashSection";
+import { SurveysSection } from "@/components/dashboard/SurveysSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
 import { vaultKeepDB } from "@/lib/indexedDB";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -130,6 +131,7 @@ const Dashboard = () => {
             {activeSection === "ideas" && <IdeasSection />}
             {activeSection === "notes" && <QuickNotesSection />}
             {activeSection === "kanban" && <IdeasKanban />}
+            {activeSection === "surveys" && <SurveysSection />}
             {activeSection === "reminders" && <RemindersSection />}
             {activeSection === "categories" && <CategoriesSection />}
             {activeSection === "trash" && <TrashSection />}

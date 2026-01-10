@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.send-reminder-email]
 verify_jwt = true
+
+[functions.generate-survey]
+verify_jwt = true

@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
-import { BarChart3, Users, Clock, TrendingUp, Calendar, FileText, Star, Download, RefreshCw, ExternalLink, Copy } from "lucide-react";
+import { BarChart3, Users, Clock, TrendingUp, Calendar, FileText, Star, RefreshCw, ExternalLink, Copy, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
+import { SurveyAIAnalysis } from "./SurveyAIAnalysis";
+import { SurveyPDFExport } from "./SurveyPDFExport";
 import { toast } from "sonner";
 import { 
   AreaChart, 
@@ -18,8 +21,7 @@ import {
   Pie,
   Cell,
   BarChart,
-  Bar,
-  Legend
+  Bar
 } from "recharts";
 
 interface Survey {
@@ -182,34 +184,44 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
   }
 
   return (
-    <div className="space-y-6">
+    <Tabs defaultValue="overview" className="space-y-6">
       {/* Actions Bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-          Actualiser
-        </Button>
-        {survey.is_published && survey.share_code && (
-          <>
-            <Button variant="outline" size="sm" onClick={handleCopyLink}>
-              <Copy className="w-4 h-4 mr-2" />
-              Copier le lien
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => window.open(`/survey/${survey.share_code}`, '_blank')}
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Ouvrir l'enquête
-            </Button>
-          </>
-        )}
-        <Button variant="outline" size="sm" onClick={onViewResults}>
-          <FileText className="w-4 h-4 mr-2" />
-          Voir les détails
-        </Button>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <TabsList className="grid grid-cols-2 w-full sm:w-auto">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">📊 Aperçu</TabsTrigger>
+          <TabsTrigger value="analysis" className="text-xs sm:text-sm">🤖 Analyse IA</TabsTrigger>
+        </TabsList>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Actualiser</span>
+          </Button>
+          <SurveyPDFExport 
+            surveyTitle={survey.title}
+            surveyDescription={survey.description}
+            questions={questions}
+            responses={responses}
+          />
+          {survey.is_published && survey.share_code && (
+            <>
+              <Button variant="outline" size="sm" onClick={handleCopyLink}>
+                <Copy className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Copier</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.open(`/survey/${survey.share_code}`, '_blank')}
+              >
+                <ExternalLink className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Ouvrir</span>
+              </Button>
+            </>
+          )}
+        </div>
       </div>
+
+      <TabsContent value="overview" className="space-y-6 mt-0">
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -438,6 +450,11 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
           )}
         </CardContent>
       </Card>
-    </div>
+      </TabsContent>
+
+      <TabsContent value="analysis" className="mt-0">
+        <SurveyAIAnalysis surveyId={survey.id} surveyTitle={survey.title} />
+      </TabsContent>
+    </Tabs>
   );
 }

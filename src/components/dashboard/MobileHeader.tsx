@@ -8,7 +8,7 @@ import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { DataBackup } from "./DataBackup";
 import { FileSystemAccess } from "./FileSystemAccess";
 import { cn } from "@/lib/utils";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -27,7 +27,7 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
   const [isInstalled, setIsInstalled] = useState(false);
   const [backupOpen, setBackupOpen] = useState(false);
   const [fileSystemOpen, setFileSystemOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const {
     isOnline,
     isSyncing,
@@ -62,18 +62,18 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
     if (!deferredPrompt) return;
     await deferredPrompt.prompt();
     setDeferredPrompt(null);
-    setDrawerOpen(false);
+    setSheetOpen(false);
   };
 
   const handleMenuAction = (action: () => void) => {
     action();
-    setDrawerOpen(false);
+    setSheetOpen(false);
   };
 
   return (
     <>
-      <header className="sticky top-0 bg-sidebar border-b border-sidebar-border z-40 lg:hidden safe-area-top rounded-b-2xl">
-        <div className="flex items-center justify-between px-3 py-2">
+      <header className="fixed top-0 left-0 right-0 bg-sidebar border-b border-sidebar-border z-50 lg:hidden">
+        <div className="flex items-center justify-between px-3 py-2 safe-area-top">
           <div className="flex items-center space-x-2 min-w-0 flex-shrink">
             <img src="/logo.webp" alt="VaultKeep Logo" className="w-8 h-8 rounded-lg flex-shrink-0" />
             <div className="min-w-0 flex flex-col">
@@ -113,16 +113,18 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
               </Button>
             )}
 
-            {/* Drawer Menu */}
-            <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-              <DrawerTrigger asChild>
+            {/* Sheet Menu */}
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+              <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 bg-sidebar-accent hover:bg-sidebar-accent/80">
                   <Menu className="w-4 h-4 text-sidebar-foreground" />
                 </Button>
-              </DrawerTrigger>
-              <DrawerContent className="bg-sidebar border-sidebar-border">
-                <div className="p-4 pb-8">
-                  <h3 className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">Menu</h3>
+              </SheetTrigger>
+              <SheetContent side="right" className="bg-sidebar border-sidebar-border w-[280px] sm:w-[320px] p-0">
+                <div className="p-4 pt-12 pb-8 h-full overflow-y-auto">
+                  <SheetTitle className="text-lg font-semibold text-sidebar-foreground mb-6 text-center">
+                    Menu
+                  </SheetTitle>
                   <div className="grid grid-cols-2 gap-3">
                     {!isInstalled && deferredPrompt && (
                       <button
@@ -150,7 +152,7 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
                       <span className="text-sm font-medium">Sauvegarde</span>
                     </button>
                     
-                    <NotificationButton variant="drawer" onAction={() => setDrawerOpen(false)} />
+                    <NotificationButton variant="drawer" onAction={() => setSheetOpen(false)} />
                     
                     <button
                       onClick={() => handleMenuAction(() => setTheme(theme === "dark" ? "light" : "dark"))}
@@ -169,8 +171,8 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
                     </button>
                   </div>
                 </div>
-              </DrawerContent>
-            </Drawer>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>

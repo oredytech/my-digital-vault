@@ -2,7 +2,7 @@ import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, Cl
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
 
@@ -12,7 +12,7 @@ interface MobileNavProps {
 }
 
 export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   
   const mainNavItems = [
     { id: "stats" as const, label: "Stats", icon: BarChart3 },
@@ -33,12 +33,12 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
 
   const handleSectionChange = (section: ActiveSection) => {
     onSectionChange(section);
-    setDrawerOpen(false);
+    setSheetOpen(false);
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-sidebar border-t border-sidebar-border z-50 lg:hidden safe-area-bottom rounded-t-2xl">
-      <div className="flex items-center justify-around py-2 px-1">
+    <nav className="fixed bottom-0 left-0 right-0 bg-sidebar border-t border-sidebar-border z-50 lg:hidden">
+      <div className="flex items-center justify-around py-2 px-1 safe-area-bottom">
         {mainNavItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -58,9 +58,9 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
           );
         })}
         
-        {/* More Menu with Drawer */}
-        <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-          <DrawerTrigger asChild>
+        {/* More Menu with Sheet */}
+        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+          <SheetTrigger asChild>
             <button
               className={cn(
                 "flex flex-col items-center justify-center py-2 px-2 rounded-lg transition-all min-w-0 flex-1",
@@ -72,11 +72,14 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
               <MoreHorizontal className="w-5 h-5 mb-0.5" />
               <span className="text-[9px] font-medium truncate">Plus</span>
             </button>
-          </DrawerTrigger>
-          <DrawerContent className="bg-sidebar border-sidebar-border">
+          </SheetTrigger>
+          <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[50vh]">
             <div className="p-4 pb-8">
-              <h3 className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">Plus d'options</h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
+              <SheetTitle className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">
+                Plus d'options
+              </SheetTitle>
+              <div className="grid grid-cols-3 gap-3">
                 {moreItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -97,8 +100,8 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
                 })}
               </div>
             </div>
-          </DrawerContent>
-        </Drawer>
+          </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );

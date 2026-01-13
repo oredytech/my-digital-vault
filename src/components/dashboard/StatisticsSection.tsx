@@ -129,11 +129,12 @@ export function StatisticsSection() {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fade-in p-2 sm:p-0 max-w-full overflow-x-hidden">
+    <div className="space-y-4 sm:space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-          Statistiques
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2 flex-wrap">
+          <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-primary flex-shrink-0" />
+          <span>Statistiques</span>
           {!isOnline && (
             <span className="flex items-center gap-1 text-xs font-normal text-amber-500 bg-amber-500/10 rounded-full px-2 py-1">
               <WifiOff className="w-3 h-3" />
@@ -144,18 +145,16 @@ export function StatisticsSection() {
       </div>
 
       {/* Quick Actions Widget */}
-      <div className="w-full overflow-hidden">
-        <QuickActionsWidget />
-      </div>
+      <QuickActionsWidget />
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className="bg-card border-border">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+            <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
               <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.links}</p>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">Liens</p>
             </div>
@@ -163,10 +162,10 @@ export function StatisticsSection() {
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/10 shrink-0">
+            <div className="p-2 rounded-lg bg-purple-500/10 flex-shrink-0">
               <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.accounts}</p>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">Comptes</p>
             </div>
@@ -174,10 +173,10 @@ export function StatisticsSection() {
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 shrink-0">
+            <div className="p-2 rounded-lg bg-amber-500/10 flex-shrink-0">
               <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.ideas}</p>
               <p className="text-xs sm:text-sm text-muted-foreground truncate">Idées</p>
             </div>
@@ -185,53 +184,54 @@ export function StatisticsSection() {
         </Card>
         <Card className="bg-card border-border">
           <CardContent className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3">
-            <div className="p-2 rounded-lg bg-rose-500/10 shrink-0">
+            <div className="p-2 rounded-lg bg-rose-500/10 flex-shrink-0">
               <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-lg sm:text-2xl font-bold text-foreground">{totalCounts.reminders}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground truncate">Rappels actifs</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">Rappels</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Smart Suggestions */}
-      <div className="w-full overflow-hidden">
-        <SmartSuggestions />
-      </div>
+      <SmartSuggestions />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Bar Chart - Items per Category */}
-        <Card className="bg-card border-border w-full overflow-hidden">
-          <CardHeader className="p-3 sm:pb-2 sm:p-6">
+        <Card className="bg-card border-border">
+          <CardHeader className="p-3 sm:p-6 pb-2">
             <CardTitle className="text-sm sm:text-lg font-semibold text-foreground flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              Éléments par catégorie
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              <span className="truncate">Éléments par catégorie</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 sm:p-6 pt-0">
             {categoryStats.length > 0 ? (
-              <div className="w-full h-[200px] sm:h-[250px] -ml-2 sm:ml-0">
+              <div className="w-full h-[220px] sm:h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={categoryStats} margin={{ top: 10, right: 5, left: -25, bottom: 5 }}>
+                  <BarChart 
+                    data={categoryStats} 
+                    margin={{ top: 10, right: 10, left: 0, bottom: 60 }}
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                       dataKey="name" 
-                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }} 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} 
                       tickLine={{ stroke: "hsl(var(--border))" }}
                       axisLine={{ stroke: "hsl(var(--border))" }}
                       angle={-45}
                       textAnchor="end"
-                      height={50}
+                      height={60}
                       interval={0}
                     />
                     <YAxis 
                       tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} 
                       tickLine={{ stroke: "hsl(var(--border))" }}
                       axisLine={{ stroke: "hsl(var(--border))" }}
-                      width={30}
+                      width={35}
                     />
                     <Tooltip 
                       contentStyle={{ 
@@ -255,24 +255,24 @@ export function StatisticsSection() {
         </Card>
 
         {/* Pie Chart - Distribution */}
-        <Card className="bg-card border-border w-full overflow-hidden">
-          <CardHeader className="p-3 sm:pb-2 sm:p-6">
+        <Card className="bg-card border-border">
+          <CardHeader className="p-3 sm:p-6 pb-2">
             <CardTitle className="text-sm sm:text-lg font-semibold text-foreground flex items-center gap-2">
-              <PieChartIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              Répartition globale
+              <PieChartIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              <span className="truncate">Répartition globale</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 sm:p-6 pt-0">
             {pieData.length > 0 ? (
-              <div className="w-full h-[200px] sm:h-[250px]">
+              <div className="w-full h-[220px] sm:h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={pieData}
                       cx="50%"
-                      cy="50%"
-                      innerRadius={35}
-                      outerRadius={60}
+                      cy="45%"
+                      innerRadius={40}
+                      outerRadius={70}
                       paddingAngle={5}
                       dataKey="value"
                       label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -292,7 +292,8 @@ export function StatisticsSection() {
                       }} 
                     />
                     <Legend 
-                      wrapperStyle={{ color: "hsl(var(--foreground))", fontSize: "12px" }}
+                      wrapperStyle={{ fontSize: "12px" }}
+                      verticalAlign="bottom"
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -307,21 +308,17 @@ export function StatisticsSection() {
       {/* Bottom Row - Password Generator, Activity Timeline, Reminders */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Password Generator */}
-        <div className="w-full overflow-hidden">
-          <PasswordGenerator />
-        </div>
+        <PasswordGenerator />
 
         {/* Activity Timeline */}
-        <div className="w-full overflow-hidden">
-          <ActivityTimeline />
-        </div>
+        <ActivityTimeline />
 
         {/* Upcoming Reminders */}
-        <Card className="bg-card border-border w-full overflow-hidden md:col-span-2 lg:col-span-1">
-          <CardHeader className="p-3 sm:pb-2 sm:p-6">
+        <Card className="bg-card border-border md:col-span-2 lg:col-span-1">
+          <CardHeader className="p-3 sm:p-6 pb-2">
             <CardTitle className="text-sm sm:text-lg font-semibold text-foreground flex items-center gap-2">
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500" />
-              Rappels à venir
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-rose-500 flex-shrink-0" />
+              <span className="truncate">Rappels à venir</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-3 sm:p-6 pt-0">
@@ -338,15 +335,15 @@ export function StatisticsSection() {
                       }`}
                     >
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${isOverdue ? "bg-destructive" : "bg-primary"}`} />
-                        <div className="min-w-0">
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isOverdue ? "bg-destructive" : "bg-primary"}`} />
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-foreground text-xs sm:text-sm truncate">{reminder.title}</p>
                           <p className="text-xs text-muted-foreground">
                             {reminder.related_type === "account" ? "Compte" : "Autre"}
                           </p>
                         </div>
                       </div>
-                      <p className={`text-xs sm:text-sm shrink-0 ml-2 ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                      <p className={`text-xs sm:text-sm flex-shrink-0 ml-2 ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
                         {remindDate.toLocaleDateString("fr-FR", {
                           day: "numeric",
                           month: "short",

@@ -147,7 +147,7 @@ export function useLocalDatabase() {
     }
   }, []);
 
-  // Initialize and sync data from cloud to local
+  // Initialize with LOCAL-FIRST approach: load local data immediately, then sync with cloud
   const initializeLocalData = useCallback(async (userId?: string) => {
     try {
       let currentUserId = userId;
@@ -169,27 +169,38 @@ export function useLocalDatabase() {
       // Check file system access
       await checkFileSystemAccess();
 
+      // STEP 1: Immediately mark as initialized with local data
+      // This allows the UI to render with cached data right away
+      setIsInitialized(true);
+      await updatePendingCount();
+
+      // STEP 2: If offline, stop here - we already have local data
       if (!navigator.onLine) {
-        setIsInitialized(true);
-        await updatePendingCount();
         return;
       }
 
+      // STEP 3: Sync with cloud in the background
       setIsAutoSyncing(true);
 
-      // Fetch all data from cloud and store locally
       const tables: TableName[] = ["accounts", "links", "ideas", "categories", "reminders", "notes", "surveys", "survey_questions", "survey_responses"];
 
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select("*")
-          .order("created_at", { ascending: false });
+      // Fetch all tables in parallel for faster loading
+      const fetchPromises = tables.map(async (table) => {
+        try {
+          const { data, error } = await supabase
+            .from(table)
+            .select("*")
+            .order("created_at", { ascending: false });
 
-        if (!error && data) {
-          await vaultKeepDB.putMany(table, data, "synced");
+          if (!error && data && data.length > 0) {
+            await vaultKeepDB.putMany(table, data, "synced");
+          }
+        } catch (err) {
+          console.error(`Error syncing ${table}:`, err);
         }
-      }
+      });
+
+      await Promise.all(fetchPromises);
 
       // Clean expired trash items
       const cleaned = await vaultKeepDB.cleanExpiredTrash();
@@ -201,7 +212,6 @@ export function useLocalDatabase() {
       await saveToFileSystem();
 
       setIsAutoSyncing(false);
-      setIsInitialized(true);
       await updatePendingCount();
     } catch (error) {
       console.error("Error initializing local data:", error);
@@ -432,7 +442,15 @@ export function useLocalDatabase() {
     if (!isOnline || isSyncing) return;
 
     setIsSyncing(true);
-    const pendingActions = await vaultKeepDB.getPendingActions();
+    
+    let pendingActions: PendingAction[] = [];
+    try {
+      pendingActions = await vaultKeepDB.getPendingActions();
+    } catch (error) {
+      console.error("Error getting pending actions:", error);
+      setIsSyncing(false);
+      return;
+    }
 
     if (pendingActions.length === 0) {
       setIsSyncing(false);
@@ -444,8 +462,14 @@ export function useLocalDatabase() {
 
     let userId = vaultKeepDB.getCurrentUser();
     if (!userId) {
-      const { data: { user } } = await supabase.auth.getUser();
-      userId = user?.id || null;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        userId = user?.id || null;
+      } catch (error) {
+        console.error("Error getting user:", error);
+        setIsSyncing(false);
+        return;
+      }
     }
 
     if (!userId) {
@@ -453,41 +477,47 @@ export function useLocalDatabase() {
       return;
     }
 
-    for (const action of pendingActions) {
-      try {
-        switch (action.action) {
-          case "insert":
-            const insertData = { ...action.data, user_id: userId };
-            const { error: insertError } = await supabase
-              .from(action.table as any)
-              .upsert(insertData);
-            if (insertError) throw insertError;
-            break;
+    // Process actions in parallel batches for better performance
+    const batchSize = 5;
+    for (let i = 0; i < pendingActions.length; i += batchSize) {
+      const batch = pendingActions.slice(i, i + batchSize);
+      
+      await Promise.all(batch.map(async (action) => {
+        try {
+          switch (action.action) {
+            case "insert":
+              const insertData = { ...action.data, user_id: userId };
+              const { error: insertError } = await supabase
+                .from(action.table as any)
+                .upsert(insertData);
+              if (insertError) throw insertError;
+              break;
 
-          case "update":
-            const { id, ...updateFields } = action.data;
-            const { error: updateError } = await supabase
-              .from(action.table as any)
-              .update(updateFields)
-              .eq("id", id);
-            if (updateError) throw updateError;
-            break;
+            case "update":
+              const { id, ...updateFields } = action.data;
+              const { error: updateError } = await supabase
+                .from(action.table as any)
+                .update(updateFields)
+                .eq("id", id);
+              if (updateError) throw updateError;
+              break;
 
-          case "delete":
-            const { error: deleteError } = await supabase
-              .from(action.table as any)
-              .delete()
-              .eq("id", action.data.id);
-            if (deleteError) throw deleteError;
-            break;
+            case "delete":
+              const { error: deleteError } = await supabase
+                .from(action.table as any)
+                .delete()
+                .eq("id", action.data.id);
+              if (deleteError) throw deleteError;
+              break;
+          }
+
+          await vaultKeepDB.removePendingAction(action.id);
+          successCount++;
+        } catch (error) {
+          console.error(`Sync error for action ${action.id}:`, error);
+          failedActions.push(action);
         }
-
-        await vaultKeepDB.removePendingAction(action.id);
-        successCount++;
-      } catch (error) {
-        console.error(`Sync error for action ${action.id}:`, error);
-        failedActions.push(action);
-      }
+      }));
     }
 
     await updatePendingCount();
@@ -499,10 +529,7 @@ export function useLocalDatabase() {
     if (failedActions.length > 0) {
       toast.error(`${failedActions.length} action(s) en échec`);
     }
-
-    // Refresh local data from cloud
-    await initializeLocalData();
-  }, [isOnline, isSyncing, updatePendingCount, initializeLocalData]);
+  }, [isOnline, isSyncing, updatePendingCount]);
 
   // Handle online/offline events
   useEffect(() => {

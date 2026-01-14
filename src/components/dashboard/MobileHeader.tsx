@@ -113,19 +113,20 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
               </Button>
             )}
 
-            {/* Sheet Menu */}
+            {/* Sheet Menu - Opens from bottom like "Plus" menu */}
             <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 bg-sidebar-accent hover:bg-sidebar-accent/80">
                   <Menu className="w-4 h-4 text-sidebar-foreground" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="bg-sidebar border-sidebar-border w-[280px] sm:w-[320px] p-0">
-                <div className="p-4 pt-12 pb-8 h-full overflow-y-auto">
-                  <SheetTitle className="text-lg font-semibold text-sidebar-foreground mb-6 text-center">
+              <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[60vh]">
+                <div className="p-4 pb-8">
+                  <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
+                  <SheetTitle className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">
                     Menu
                   </SheetTitle>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {!isInstalled && deferredPrompt && (
                       <button
                         onClick={handleInstall}

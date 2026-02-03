@@ -91,18 +91,18 @@ ${result.analysis}
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <Card className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border-violet-500/20">
-        <CardContent className="py-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <CardContent className="py-4 sm:py-6 px-4 sm:px-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-violet-500/20">
-                <Brain className="w-6 h-6 text-violet-500" />
+              <div className="p-2 sm:p-3 rounded-xl bg-violet-500/20 shrink-0">
+                <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-violet-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Analyse IA des réponses</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-semibold text-sm sm:text-lg">Analyse IA des réponses</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Obtenez des insights détaillés grâce à l'intelligence artificielle
                 </p>
               </div>
@@ -110,22 +110,23 @@ ${result.analysis}
             <Button 
               onClick={handleAnalyze} 
               disabled={analyzing}
-              className="shrink-0"
+              size="sm"
+              className="w-full sm:w-auto shrink-0"
             >
               {analyzing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyse en cours...
+                  <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 animate-spin" />
+                  <span className="text-xs sm:text-sm">Analyse...</span>
                 </>
               ) : result ? (
                 <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Ré-analyser
+                  <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Ré-analyser</span>
                 </>
               ) : (
                 <>
-                  <Brain className="w-4 h-4 mr-2" />
-                  Lancer l'analyse
+                  <Brain className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2" />
+                  <span className="text-xs sm:text-sm">Lancer l'analyse</span>
                 </>
               )}
             </Button>
@@ -136,10 +137,10 @@ ${result.analysis}
       {/* Error State */}
       {error && (
         <Card className="border-destructive/50 bg-destructive/5">
-          <CardContent className="py-4">
+          <CardContent className="py-3 sm:py-4 px-4">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-destructive" />
-              <p className="text-sm text-destructive">{error}</p>
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-destructive shrink-0" />
+              <p className="text-xs sm:text-sm text-destructive">{error}</p>
             </div>
           </CardContent>
         </Card>
@@ -149,38 +150,38 @@ ${result.analysis}
       {result && (
         <>
           {/* Statistics Summary */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-2xl font-bold text-primary">
+              <CardContent className="py-3 sm:py-4 text-center px-2">
+                <p className="text-lg sm:text-2xl font-bold text-primary">
                   {result.statistics.total_responses}
                 </p>
-                <p className="text-xs text-muted-foreground">Réponses</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Réponses</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-2xl font-bold text-primary">
+              <CardContent className="py-3 sm:py-4 text-center px-2">
+                <p className="text-lg sm:text-2xl font-bold text-primary">
                   {result.statistics.total_questions}
                 </p>
-                <p className="text-xs text-muted-foreground">Questions</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Questions</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="py-4 text-center">
-                <p className="text-2xl font-bold text-primary">
+              <CardContent className="py-3 sm:py-4 text-center px-2">
+                <p className="text-lg sm:text-2xl font-bold text-primary">
                   {result.statistics.completion_rate}%
                 </p>
-                <p className="text-xs text-muted-foreground">Complétion</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Complétion</p>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="py-4 text-center">
-                <Badge variant="secondary" className="text-xs">
-                  <CheckCircle className="w-3 h-3 mr-1" />
+              <CardContent className="py-3 sm:py-4 text-center px-2">
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                  <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 mr-1" />
                   Analysé
                 </Badge>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">
                   {new Date(result.generated_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </CardContent>
@@ -189,50 +190,50 @@ ${result.analysis}
 
           {/* Analysis Report */}
           <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-primary" />
+            <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
                   Rapport d'analyse
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={handleExportReport}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Exporter
+                <Button variant="outline" size="sm" onClick={handleExportReport} className="h-7 sm:h-8 text-xs">
+                  <Download className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Exporter</span>
                 </Button>
               </div>
-              <CardDescription>
+              <CardDescription className="text-xs">
                 Insights générés par l'IA basés sur les réponses collectées
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <ScrollArea className="h-[400px] pr-4">
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <ScrollArea className="h-[300px] sm:h-[400px] pr-2 sm:pr-4">
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   {result.analysis.split('\n').map((paragraph, index) => {
                     if (paragraph.startsWith('##')) {
                       return (
-                        <h3 key={index} className="text-lg font-semibold text-foreground mt-6 mb-3 flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-primary" />
+                        <h3 key={index} className="text-sm sm:text-lg font-semibold text-foreground mt-4 sm:mt-6 mb-2 sm:mb-3 flex items-center gap-2">
+                          <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
                           {paragraph.replace('##', '').trim()}
                         </h3>
                       );
                     }
                     if (paragraph.startsWith('#')) {
                       return (
-                        <h2 key={index} className="text-xl font-bold text-foreground mt-6 mb-4">
+                        <h2 key={index} className="text-base sm:text-xl font-bold text-foreground mt-4 sm:mt-6 mb-3 sm:mb-4">
                           {paragraph.replace('#', '').trim()}
                         </h2>
                       );
                     }
                     if (paragraph.startsWith('-') || paragraph.startsWith('*')) {
                       return (
-                        <li key={index} className="text-muted-foreground ml-4">
+                        <li key={index} className="text-xs sm:text-sm text-muted-foreground ml-3 sm:ml-4">
                           {paragraph.replace(/^[-*]\s*/, '').trim()}
                         </li>
                       );
                     }
                     if (paragraph.trim()) {
                       return (
-                        <p key={index} className="text-muted-foreground leading-relaxed mb-3">
+                        <p key={index} className="text-xs sm:text-sm text-muted-foreground leading-relaxed mb-2 sm:mb-3">
                           {paragraph}
                         </p>
                       );
@@ -246,22 +247,22 @@ ${result.analysis}
 
           {/* Response Rates by Question */}
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Taux de réponse par question</CardTitle>
+            <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+              <CardTitle className="text-sm sm:text-base">Taux de réponse par question</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+            <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="space-y-2 sm:space-y-3">
                 {result.statistics.response_rate_by_question.map((item, index) => (
                   <div key={index} className="space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground truncate max-w-[70%]">
+                    <div className="flex justify-between text-xs sm:text-sm gap-2">
+                      <span className="text-muted-foreground truncate max-w-[60%] sm:max-w-[70%]">
                         {item.question}
                       </span>
-                      <span className="font-medium">{item.response_rate}%</span>
+                      <span className="font-medium shrink-0">{item.response_rate}%</span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2">
+                    <div className="w-full bg-muted rounded-full h-1.5 sm:h-2">
                       <div 
-                        className="bg-primary rounded-full h-2 transition-all"
+                        className="bg-primary rounded-full h-1.5 sm:h-2 transition-all"
                         style={{ width: `${item.response_rate}%` }}
                       />
                     </div>

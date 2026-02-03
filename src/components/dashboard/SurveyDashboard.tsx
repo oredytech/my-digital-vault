@@ -184,17 +184,17 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
   }
 
   return (
-    <Tabs defaultValue="overview" className="space-y-6">
+    <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
       {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <TabsList className="grid grid-cols-2 w-full sm:w-auto">
+      <div className="flex flex-col gap-3 sm:gap-4">
+        <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="overview" className="text-xs sm:text-sm">📊 Aperçu</TabsTrigger>
           <TabsTrigger value="analysis" className="text-xs sm:text-sm">🤖 Analyse IA</TabsTrigger>
         </TabsList>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
-            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Actualiser</span>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="h-8">
+            <RefreshCw className={`w-3.5 h-3.5 sm:mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline text-xs">Actualiser</span>
           </Button>
           <SurveyPDFExport 
             surveyTitle={survey.title}
@@ -204,81 +204,82 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
           />
           {survey.is_published && survey.share_code && (
             <>
-              <Button variant="outline" size="sm" onClick={handleCopyLink}>
-                <Copy className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Copier</span>
+              <Button variant="outline" size="sm" onClick={handleCopyLink} className="h-8">
+                <Copy className="w-3.5 h-3.5 sm:mr-2" />
+                <span className="hidden sm:inline text-xs">Copier</span>
               </Button>
               <Button 
                 variant="outline" 
-                size="sm" 
+                size="sm"
+                className="h-8"
                 onClick={() => window.open(`/survey/${survey.share_code}`, '_blank')}
               >
-                <ExternalLink className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Ouvrir</span>
+                <ExternalLink className="w-3.5 h-3.5 sm:mr-2" />
+                <span className="hidden sm:inline text-xs">Ouvrir</span>
               </Button>
             </>
           )}
         </div>
       </div>
 
-      <TabsContent value="overview" className="space-y-6 mt-0">
+      <TabsContent value="overview" className="space-y-4 sm:space-y-6 mt-0">
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20">
-                <Users className="w-5 h-5 text-primary" />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/20 shrink-0">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{totalResponses}</p>
-                <p className="text-xs text-muted-foreground">Réponses totales</p>
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold">{totalResponses}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Réponses</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-chart-2/10 to-chart-2/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-chart-2/20">
-                <FileText className="w-5 h-5 text-chart-2" />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-chart-2/20 shrink-0">
+                <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-chart-2" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{questions.length}</p>
-                <p className="text-xs text-muted-foreground">Questions</p>
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold">{questions.length}</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Questions</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-chart-3/10 to-chart-3/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-chart-3/20">
-                <TrendingUp className="w-5 h-5 text-chart-3" />
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-chart-3/20 shrink-0">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-chart-3" />
               </div>
-              <div>
-                <p className="text-2xl font-bold">{avgCompletionRate}%</p>
-                <p className="text-xs text-muted-foreground">Taux de complétion</p>
+              <div className="min-w-0">
+                <p className="text-lg sm:text-2xl font-bold">{avgCompletionRate}%</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">Complétion</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-chart-4/10 to-chart-4/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-chart-4/20">
-                <Badge variant={survey.is_published ? "default" : "secondary"} className="text-xs">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 rounded-lg bg-chart-4/20 shrink-0">
+                <Badge variant={survey.is_published ? "default" : "secondary"} className="text-[10px] sm:text-xs">
                   {survey.is_published ? "Publiée" : "Brouillon"}
                 </Badge>
               </div>
-              <div>
-                <p className="text-sm font-medium">Statut</p>
-                <p className="text-xs text-muted-foreground">
-                  {survey.is_published ? "Accepte les réponses" : "Non accessible"}
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm font-medium truncate">Statut</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                  {survey.is_published ? "Active" : "Non publié"}
                 </p>
               </div>
             </div>
@@ -287,37 +288,39 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6">
         {/* Responses Over Time */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-primary" />
+          <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
               Réponses (7 derniers jours)
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-48">
+          <CardContent className="px-2 sm:px-6 pb-3 sm:pb-6">
+            <div className="h-40 sm:h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={responsesOverTime()}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis 
                     dataKey="date" 
-                    tick={{ fontSize: 11 }} 
+                    tick={{ fontSize: 10 }} 
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis 
-                    tick={{ fontSize: 11 }} 
+                    tick={{ fontSize: 10 }} 
                     tickLine={false}
                     axisLine={false}
                     allowDecimals={false}
+                    width={30}
                   />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--popover))', 
                       border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px'
+                      borderRadius: '8px',
+                      fontSize: '12px'
                     }}
                   />
                   <Area 
@@ -332,62 +335,28 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
             </div>
           </CardContent>
         </Card>
-
-        {/* Question Types Distribution */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-primary" />
-              Types de questions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={questionTypeData()}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={70}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    labelLine={false}
-                  >
-                    {questionTypeData().map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Rating Questions */}
       {averageRatings().length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Star className="w-4 h-4 text-yellow-500" />
+          <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+            <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-yellow-500 shrink-0" />
               Moyennes des évaluations
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-48">
+          <CardContent className="px-2 sm:px-6 pb-3 sm:pb-6">
+            <div className="h-32 sm:h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={averageRatings()} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 11 }} />
+                  <XAxis type="number" domain={[0, 5]} tick={{ fontSize: 10 }} />
                   <YAxis 
                     dataKey="question" 
                     type="category" 
-                    width={120} 
-                    tick={{ fontSize: 10 }}
+                    width={80} 
+                    tick={{ fontSize: 9 }}
                     tickLine={false}
                   />
                   <Tooltip />
@@ -401,20 +370,20 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
 
       {/* Recent Responses */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary" />
+        <CardHeader className="pb-2 px-3 sm:px-6 pt-3 sm:pt-6">
+          <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary shrink-0" />
             Réponses récentes
           </CardTitle>
-          <CardDescription>Les 5 dernières soumissions</CardDescription>
+          <CardDescription className="text-xs">Les 5 dernières soumissions</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
           {recentResponses.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-6 sm:py-8 text-muted-foreground text-sm">
               Aucune réponse pour le moment
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {recentResponses.map((response, index) => {
                 const answeredCount = Object.keys(response.answers).filter(
                   k => response.answers[k] !== undefined && response.answers[k] !== ""
@@ -426,22 +395,22 @@ export function SurveyDashboard({ survey, onViewResults }: SurveyDashboardProps)
                 return (
                   <div 
                     key={response.id}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-muted/30"
+                    className="flex items-center gap-2 sm:gap-4 p-2 sm:p-3 rounded-lg bg-muted/30"
                   >
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
                       #{index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
+                      <p className="text-xs sm:text-sm font-medium truncate">
                         Réponse anonyme
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(response.created_at).toLocaleString('fr-FR')}
+                      <p className="text-[10px] sm:text-xs text-muted-foreground">
+                        {new Date(response.created_at).toLocaleDateString('fr-FR')}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{completionRate}%</p>
-                      <Progress value={completionRate} className="w-20 h-1.5" />
+                    <div className="text-right shrink-0">
+                      <p className="text-xs sm:text-sm font-medium">{completionRate}%</p>
+                      <Progress value={completionRate} className="w-12 sm:w-20 h-1 sm:h-1.5" />
                     </div>
                   </div>
                 );

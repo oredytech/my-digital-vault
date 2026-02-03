@@ -35,8 +35,20 @@ interface SurveyQuestion {
   isDeleted?: boolean;
 }
 
+interface SurveyTemplate {
+  name: string;
+  description: string;
+  questions: {
+    question_text: string;
+    question_type: "text" | "textarea" | "radio" | "checkbox" | "rating" | "number";
+    options?: string[];
+    is_required: boolean;
+  }[];
+}
+
 interface SurveyBuilderProps {
   survey?: Survey | null;
+  template?: SurveyTemplate | null;
   onSave: () => void;
   onCancel: () => void;
 }
@@ -50,9 +62,9 @@ const questionTypes = [
   { value: "number", label: "Nombre" },
 ];
 
-export function SurveyBuilder({ survey, onSave, onCancel }: SurveyBuilderProps) {
-  const [title, setTitle] = useState(survey?.title || "");
-  const [description, setDescription] = useState(survey?.description || "");
+export function SurveyBuilder({ survey, template, onSave, onCancel }: SurveyBuilderProps) {
+  const [title, setTitle] = useState(survey?.title || template?.name || "");
+  const [description, setDescription] = useState(survey?.description || template?.description || "");
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
   const [saving, setSaving] = useState(false);
   const [showAIDialog, setShowAIDialog] = useState(false);
@@ -64,6 +76,19 @@ export function SurveyBuilder({ survey, onSave, onCancel }: SurveyBuilderProps) 
   useEffect(() => {
     if (survey) {
       loadQuestions();
+    } else if (template && template.questions.length > 0) {
+      // Load questions from template
+      const templateQuestions: SurveyQuestion[] = template.questions.map((q, idx) => ({
+        id: crypto.randomUUID(),
+        survey_id: "",
+        question_text: q.question_text,
+        question_type: q.question_type,
+        options: q.options,
+        question_order: idx,
+        is_required: q.is_required,
+        isNew: true,
+      }));
+      setQuestions(templateQuestions);
     } else {
       // Add a default question for new surveys
       setQuestions([{
@@ -76,7 +101,7 @@ export function SurveyBuilder({ survey, onSave, onCancel }: SurveyBuilderProps) 
         isNew: true,
       }]);
     }
-  }, [survey]);
+  }, [survey, template]);
 
   const loadQuestions = async () => {
     if (!survey) return;

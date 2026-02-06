@@ -450,6 +450,30 @@ export function useLocalDatabase() {
     await vaultKeepDB.deleteFromTrash(trashId);
   }, []);
 
+  // Helper to check if error is unrecoverable (should remove the pending action)
+  const isUnrecoverableError = (error: any): boolean => {
+    const errorMessage = error?.message || error?.code || "";
+    const errorCode = error?.code || "";
+    
+    // Foreign key violation - parent record doesn't exist
+    if (errorCode === "23503" || errorMessage.includes("violates foreign key constraint")) {
+      return true;
+    }
+    // Unique constraint violation - duplicate entry
+    if (errorCode === "23505" || errorMessage.includes("duplicate key")) {
+      return true;
+    }
+    // Record not found (for updates/deletes)
+    if (errorMessage.includes("not found") || errorCode === "PGRST116") {
+      return true;
+    }
+    // RLS policy violation - user doesn't have permission
+    if (errorCode === "42501" || errorMessage.includes("policy")) {
+      return true;
+    }
+    return false;
+  };
+
   // Sync all pending actions
   const syncAll = useCallback(async (): Promise<void> => {
     if (!isOnline || isSyncing) return;
@@ -471,7 +495,7 @@ export function useLocalDatabase() {
     }
 
     let successCount = 0;
-    let failedActions: PendingAction[] = [];
+    let removedCount = 0;
 
     let userId = vaultKeepDB.getCurrentUser();
     if (!userId) {
@@ -527,15 +551,24 @@ export function useLocalDatabase() {
                 .from(action.table as any)
                 .delete()
                 .eq("id", action.data.id);
-              if (deleteError) throw deleteError;
+              // Ignore "not found" errors for deletes - item might already be deleted
+              if (deleteError && !deleteError.message?.includes("not found") && deleteError.code !== "PGRST116") {
+                throw deleteError;
+              }
               break;
           }
 
           await vaultKeepDB.removePendingAction(action.id);
           successCount++;
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Sync error for action ${action.id}:`, error);
-          failedActions.push(action);
+          
+          // If error is unrecoverable, remove the action to prevent infinite retry loops
+          if (isUnrecoverableError(error)) {
+            console.log(`Removing unrecoverable action ${action.id} (${action.table}/${action.action})`);
+            await vaultKeepDB.removePendingAction(action.id);
+            removedCount++;
+          }
         }
       }));
     }
@@ -546,8 +579,8 @@ export function useLocalDatabase() {
     if (successCount > 0) {
       toast.success(`${successCount} modification(s) synchronisée(s)`);
     }
-    if (failedActions.length > 0) {
-      toast.error(`${failedActions.length} action(s) en échec`);
+    if (removedCount > 0) {
+      toast.info(`${removedCount} action(s) obsolète(s) nettoyée(s)`);
     }
   }, [isOnline, isSyncing, updatePendingCount]);
 

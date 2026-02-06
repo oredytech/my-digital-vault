@@ -250,6 +250,9 @@ export function useLocalDatabase() {
   }, []);
 
   // Insert data locally and queue for sync
+  // Tables that don't have a user_id column (linked via foreign keys instead)
+  const tablesWithoutUserId: TableName[] = ["survey_questions", "survey_responses"];
+
   const insertData = useCallback(async (
     table: TableName,
     data: Record<string, any>
@@ -262,17 +265,26 @@ export function useLocalDatabase() {
         userId = user?.id || null;
       }
 
-      if (!userId) throw new Error("Non authentifié");
+      // Only require userId for tables that have user_id column
+      if (!userId && !tablesWithoutUserId.includes(table)) {
+        throw new Error("Non authentifié");
+      }
 
       const id = data.id || crypto.randomUUID();
       const now = new Date().toISOString();
-      const newItem = {
+      
+      // Build the new item - only add user_id for tables that have it
+      const newItem: Record<string, any> = {
         ...data,
         id,
-        user_id: userId,
         created_at: now,
-        updated_at: now,
       };
+      
+      // Add user_id only for tables that have that column
+      if (!tablesWithoutUserId.includes(table) && userId) {
+        newItem.user_id = userId;
+        newItem.updated_at = now;
+      }
 
       // Save to local DB
       await vaultKeepDB.put(table, newItem, isOnline ? "synced" : "pending");
@@ -281,6 +293,7 @@ export function useLocalDatabase() {
         // Try to sync immediately
         const { error } = await supabase.from(table).insert(newItem as any);
         if (error) {
+          console.error(`Error inserting ${table} to cloud:`, error);
           // If failed, mark as pending
           await vaultKeepDB.put(table, newItem, "pending");
           await vaultKeepDB.addPendingAction({
@@ -486,10 +499,17 @@ export function useLocalDatabase() {
         try {
           switch (action.action) {
             case "insert":
-              const insertData = { ...action.data, user_id: userId };
+              // Only add user_id for tables that have that column
+              const insertPayload = tablesWithoutUserId.includes(action.table as TableName)
+                ? { ...action.data }
+                : { ...action.data, user_id: userId };
+              // Remove any undefined user_id that might have been added
+              if (tablesWithoutUserId.includes(action.table as TableName)) {
+                delete insertPayload.user_id;
+              }
               const { error: insertError } = await supabase
                 .from(action.table as any)
-                .upsert(insertData);
+                .upsert(insertPayload);
               if (insertError) throw insertError;
               break;
 

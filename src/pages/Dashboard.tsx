@@ -17,6 +17,7 @@ import { TrashSection } from "@/components/dashboard/TrashSection";
 import { SurveysSection } from "@/components/dashboard/SurveysSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
+import { FloatingWidgetDock } from "@/components/dashboard/FloatingWidgetDock";
 import { vaultKeepDB } from "@/lib/indexedDB";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
@@ -150,6 +151,9 @@ const Dashboard = () => {
 
       {/* Offline Indicator */}
       <OfflineIndicator />
+
+      {/* Floating Widget Dock */}
+      <FloatingWidgetDock />
     </div>
   );
 };

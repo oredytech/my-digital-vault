@@ -7,6 +7,9 @@ import { QuickActionsWidget } from "./QuickActionsWidget";
 import { PasswordGenerator } from "./PasswordGenerator";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { SmartSuggestions } from "./SmartSuggestions";
+import { SecurityHealthDashboard } from "./SecurityHealthDashboard";
+import { SubscriptionTracker } from "./SubscriptionTracker";
+import { AIProductivityDigest } from "./AIProductivityDigest";
 
 interface CategoryStats {
   name: string;
@@ -197,6 +200,13 @@ export function StatisticsSection() {
 
       {/* Smart Suggestions */}
       <SmartSuggestions />
+
+      {/* Value-Added Dashboards */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <SecurityHealthDashboard />
+        <SubscriptionTracker />
+        <AIProductivityDigest />
+      </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

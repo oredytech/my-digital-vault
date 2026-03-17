@@ -63,7 +63,7 @@ export function QuickActionsWidget({ onQuickAdd }: QuickActionsWidgetProps) {
   const [isRadians, setIsRadians] = useState(true);
   const [memory, setMemory] = useState<number>(0);
   const recognitionRef = useRef<any>(null);
-  const pomodoroRef = useRef<NodeJS.Timeout | null>(null);
+  const pomodoroRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load history from localStorage
   useEffect(() => {

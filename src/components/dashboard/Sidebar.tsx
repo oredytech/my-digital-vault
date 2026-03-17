@@ -1,4 +1,4 @@
-import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2, FileText, Columns, ClipboardList } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2, FileText, Columns, ClipboardList, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";

@@ -22,6 +22,7 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
   ];
 
   const moreItems = [
+    { id: "shortlinks" as const, label: "Liens courts", icon: Scissors },
     { id: "notes" as const, label: "Notes", icon: FileText },
     { id: "kanban" as const, label: "Kanban", icon: Columns },
     { id: "surveys" as const, label: "Enquêtes", icon: ClipboardList },

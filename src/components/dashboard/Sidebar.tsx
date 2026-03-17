@@ -64,6 +64,7 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
   const navItems = [
     { id: "stats" as const, label: "Statistiques", icon: BarChart3 },
     { id: "links" as const, label: "Liens", icon: Link2 },
+    { id: "shortlinks" as const, label: "Liens courts", icon: Scissors },
     { id: "accounts" as const, label: "Comptes", icon: Users },
     { id: "ideas" as const, label: "Idées", icon: Lightbulb },
     { id: "notes" as const, label: "Notes", icon: FileText },

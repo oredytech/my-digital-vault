@@ -15,7 +15,7 @@ export function FloatingPomodoro({ onClose }: FloatingPomodoroProps) {
   const [isActive, setIsActive] = useState(false);
   const [mode, setMode] = useState<"work" | "break">("work");
   const [minimized, setMinimized] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (isActive) {

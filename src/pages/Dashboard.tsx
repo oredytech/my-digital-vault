@@ -15,6 +15,7 @@ import { CategoriesSection } from "@/components/dashboard/CategoriesSection";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { TrashSection } from "@/components/dashboard/TrashSection";
 import { SurveysSection } from "@/components/dashboard/SurveysSection";
+import { ShortLinksSection } from "@/components/dashboard/ShortLinksSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
 import { FloatingWidgetDock } from "@/components/dashboard/FloatingWidgetDock";
@@ -22,7 +23,7 @@ import { vaultKeepDB } from "@/lib/indexedDB";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -133,6 +134,7 @@ const Dashboard = () => {
             {activeSection === "notes" && <QuickNotesSection />}
             {activeSection === "kanban" && <IdeasKanban />}
             {activeSection === "surveys" && <SurveysSection />}
+            {activeSection === "shortlinks" && <ShortLinksSection />}
             {activeSection === "reminders" && <RemindersSection />}
             {activeSection === "categories" && <CategoriesSection />}
             {activeSection === "trash" && <TrashSection />}

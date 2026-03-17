@@ -1,4 +1,4 @@
-import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2, FileText, Columns, ClipboardList } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, LogOut, Tag, Moon, Sun, BarChart3, Download, Trash2, RefreshCw, Cloud, HardDrive, FolderOpen, Loader2, FileText, Columns, ClipboardList, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { DataBackup } from "./DataBackup";
 import { FileSystemAccess } from "./FileSystemAccess";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -64,6 +64,7 @@ export function Sidebar({ activeSection, onSectionChange, onSignOut }: SidebarPr
   const navItems = [
     { id: "stats" as const, label: "Statistiques", icon: BarChart3 },
     { id: "links" as const, label: "Liens", icon: Link2 },
+    { id: "shortlinks" as const, label: "Liens courts", icon: Scissors },
     { id: "accounts" as const, label: "Comptes", icon: Users },
     { id: "ideas" as const, label: "Idées", icon: Lightbulb },
     { id: "notes" as const, label: "Notes", icon: FileText },

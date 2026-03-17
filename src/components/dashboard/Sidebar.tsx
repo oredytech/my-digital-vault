@@ -9,7 +9,7 @@ import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { DataBackup } from "./DataBackup";
 import { FileSystemAccess } from "./FileSystemAccess";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;

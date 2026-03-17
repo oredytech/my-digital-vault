@@ -1,4 +1,4 @@
-import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, ClipboardList } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, ClipboardList, Scissors } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";

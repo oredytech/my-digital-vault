@@ -4,7 +4,7 @@ import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks";
 
 interface MobileNavProps {
   activeSection: ActiveSection;

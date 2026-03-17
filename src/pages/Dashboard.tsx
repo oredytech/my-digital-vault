@@ -134,6 +134,7 @@ const Dashboard = () => {
             {activeSection === "notes" && <QuickNotesSection />}
             {activeSection === "kanban" && <IdeasKanban />}
             {activeSection === "surveys" && <SurveysSection />}
+            {activeSection === "shortlinks" && <ShortLinksSection />}
             {activeSection === "reminders" && <RemindersSection />}
             {activeSection === "categories" && <CategoriesSection />}
             {activeSection === "trash" && <TrashSection />}

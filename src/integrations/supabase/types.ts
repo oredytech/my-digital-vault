@@ -172,6 +172,53 @@ export type Database = {
           },
         ]
       }
+      link_clicks: {
+        Row: {
+          browser: string | null
+          city: string | null
+          clicked_at: string
+          country: string | null
+          device_type: string | null
+          id: string
+          ip_hash: string | null
+          os: string | null
+          referrer: string | null
+          short_link_id: string
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          clicked_at?: string
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          ip_hash?: string | null
+          os?: string | null
+          referrer?: string | null
+          short_link_id: string
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          clicked_at?: string
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          ip_hash?: string | null
+          os?: string | null
+          referrer?: string | null
+          short_link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_clicks_short_link_id_fkey"
+            columns: ["short_link_id"]
+            isOneToOne: false
+            referencedRelation: "short_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       links: {
         Row: {
           category_id: string | null
@@ -311,6 +358,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "reminders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      short_links: {
+        Row: {
+          click_count: number | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          is_password_protected: boolean | null
+          last_clicked_at: string | null
+          original_url: string
+          password_hash: string | null
+          slug: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          click_count?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_password_protected?: boolean | null
+          last_clicked_at?: string | null
+          original_url: string
+          password_hash?: string | null
+          slug: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          click_count?: number | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_password_protected?: boolean | null
+          last_clicked_at?: string | null
+          original_url?: string
+          password_hash?: string | null
+          slug?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "short_links_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"

@@ -15,6 +15,7 @@ import { CategoriesSection } from "@/components/dashboard/CategoriesSection";
 import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { TrashSection } from "@/components/dashboard/TrashSection";
 import { SurveysSection } from "@/components/dashboard/SurveysSection";
+import { ShortLinksSection } from "@/components/dashboard/ShortLinksSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
 import { FloatingWidgetDock } from "@/components/dashboard/FloatingWidgetDock";

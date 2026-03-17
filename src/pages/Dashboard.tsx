@@ -22,7 +22,7 @@ import { vaultKeepDB } from "@/lib/indexedDB";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks";
 
 const Dashboard = () => {
   const navigate = useNavigate();

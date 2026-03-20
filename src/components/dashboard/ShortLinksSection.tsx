@@ -3,17 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Plus, Link2, Copy, Trash2, ExternalLink, BarChart3, QrCode,
+  Plus, Link2, Copy, Trash2, BarChart3,
   MousePointerClick, Clock, Shield, Pencil, Eye, EyeOff,
-  Smartphone, Monitor, Globe, Calendar, TrendingUp
+  Calendar, TrendingUp
 } from "lucide-react";
 import { ShortLinkStats } from "./ShortLinkStats";
+import { SocialShareButtons } from "./SocialShareButtons";
 
 interface ShortLink {
   id: string;
@@ -433,7 +434,7 @@ export function ShortLinksSection() {
                   <p className="text-xs text-muted-foreground truncate">
                     → {link.original_url}
                   </p>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1">
                       <MousePointerClick className="w-3 h-3" />
                       {link.click_count || 0} clics
@@ -443,11 +444,14 @@ export function ShortLinksSection() {
                       {new Date(link.created_at).toLocaleDateString("fr-FR")}
                     </span>
                     {link.last_clicked_at && (
-                      <span className="flex items-center gap-1">
+                      <span className="hidden sm:flex items-center gap-1">
                         <Clock className="w-3 h-3" />
-                        Dernier clic : {new Date(link.last_clicked_at).toLocaleDateString("fr-FR")}
+                        Dernier : {new Date(link.last_clicked_at).toLocaleDateString("fr-FR")}
                       </span>
                     )}
+                  </div>
+                  <div className="mt-1.5">
+                    <SocialShareButtons url={`${baseUrl}/s/${link.slug}`} title={link.title || link.slug} compact />
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">

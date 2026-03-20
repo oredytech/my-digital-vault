@@ -5,6 +5,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// In-memory rate limiter (per isolate)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 30; // max 30 requests per minute per IP
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT_MAX;
+}
+
+// Cleanup stale entries periodically
+function cleanupRateLimits() {
+  const now = Date.now();
+  for (const [key, val] of rateLimitMap) {
+    if (now > val.resetAt) rateLimitMap.delete(key);
+  }
+}
+
 function getDeviceType(userAgent: string): string {
   if (/mobile|android|iphone|ipad|tablet/i.test(userAgent)) return "mobile";
   if (/tablet|ipad/i.test(userAgent)) return "tablet";
@@ -41,7 +65,20 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Cleanup every request (cheap for small maps)
+  cleanupRateLimits();
+
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
+    // Rate limit check
+    if (!checkRateLimit(ip)) {
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
+
     const { slug, password } = await req.json();
 
     if (!slug || typeof slug !== "string" || slug.length > 100) {
@@ -55,7 +92,6 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch the short link
     const { data: link, error } = await supabase
       .from("short_links")
       .select("*")
@@ -70,7 +106,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check expiration
     if (link.expires_at && new Date(link.expires_at) < new Date()) {
       await supabase.from("short_links").update({ is_active: false }).eq("id", link.id);
       return new Response(JSON.stringify({ error: "Link expired" }), {
@@ -79,7 +114,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check password protection
     if (link.is_password_protected && link.password_hash) {
       if (!password) {
         return new Response(JSON.stringify({ error: "Password required", password_required: true }), {
@@ -87,7 +121,6 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      // Simple hash comparison
       const encoder = new TextEncoder();
       const data = encoder.encode(password);
       const hash = await crypto.subtle.digest("SHA-256", data);
@@ -100,13 +133,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Track click
     const userAgent = req.headers.get("user-agent") || "";
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const referrer = req.headers.get("referer") || null;
     const ipHash = await hashIP(ip);
-
-    // Try to get country from CF headers or similar
     const country = req.headers.get("cf-ipcountry") || req.headers.get("x-country") || null;
     const city = req.headers.get("x-city") || null;
 
@@ -121,7 +150,6 @@ Deno.serve(async (req) => {
       city,
     });
 
-    // Update click count
     await supabase.from("short_links").update({
       click_count: (link.click_count || 0) + 1,
       last_clicked_at: new Date().toISOString(),

@@ -14,6 +14,7 @@ import {
   Smartphone, Monitor, Globe, Calendar, TrendingUp
 } from "lucide-react";
 import { ShortLinkStats } from "./ShortLinkStats";
+import { SocialShareButtons } from "./SocialShareButtons";
 
 interface ShortLink {
   id: string;

@@ -9,9 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Plus, Link2, Copy, Trash2, ExternalLink, BarChart3, QrCode,
+  Plus, Link2, Copy, Trash2, BarChart3,
   MousePointerClick, Clock, Shield, Pencil, Eye, EyeOff,
-  Smartphone, Monitor, Globe, Calendar, TrendingUp
+  Calendar, TrendingUp
 } from "lucide-react";
 import { ShortLinkStats } from "./ShortLinkStats";
 import { SocialShareButtons } from "./SocialShareButtons";

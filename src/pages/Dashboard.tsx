@@ -16,6 +16,9 @@ import { StatisticsSection } from "@/components/dashboard/StatisticsSection";
 import { TrashSection } from "@/components/dashboard/TrashSection";
 import { SurveysSection } from "@/components/dashboard/SurveysSection";
 import { ShortLinksSection } from "@/components/dashboard/ShortLinksSection";
+import { FilesVaultSection } from "@/components/dashboard/FilesVaultSection";
+import { TasksSection } from "@/components/dashboard/TasksSection";
+import { JournalHabitsSection } from "@/components/dashboard/JournalHabitsSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
 import { FloatingWidgetDock } from "@/components/dashboard/FloatingWidgetDock";
@@ -23,7 +26,7 @@ import { vaultKeepDB } from "@/lib/indexedDB";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks" | "files" | "tasks" | "journal";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -128,6 +131,9 @@ const Dashboard = () => {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 lg:ml-64 pb-24 lg:pb-8 pt-20 lg:pt-8">
           <div className="max-w-7xl mx-auto">
             {activeSection === "stats" && <StatisticsSection />}
+            {activeSection === "tasks" && <TasksSection />}
+            {activeSection === "journal" && <JournalHabitsSection />}
+            {activeSection === "files" && <FilesVaultSection />}
             {activeSection === "links" && <LinksSection />}
             {activeSection === "accounts" && <AccountsSection />}
             {activeSection === "ideas" && <IdeasSection />}

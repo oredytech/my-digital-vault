@@ -1,10 +1,10 @@
-import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, ClipboardList, Scissors } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, ClipboardList, Scissors, Lock, ListTodo, BookHeart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks" | "files" | "tasks" | "journal";
 
 interface MobileNavProps {
   activeSection: ActiveSection;
@@ -16,13 +16,16 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
   
   const mainNavItems = [
     { id: "stats" as const, label: "Stats", icon: BarChart3 },
-    { id: "links" as const, label: "Liens", icon: Link2 },
-    { id: "accounts" as const, label: "Comptes", icon: Users },
-    { id: "ideas" as const, label: "Idées", icon: Lightbulb },
+    { id: "tasks" as const, label: "Tâches", icon: ListTodo },
+    { id: "journal" as const, label: "Journal", icon: BookHeart },
+    { id: "files" as const, label: "Coffre", icon: Lock },
   ];
 
   const moreItems = [
+    { id: "links" as const, label: "Liens", icon: Link2 },
     { id: "shortlinks" as const, label: "Liens courts", icon: Scissors },
+    { id: "accounts" as const, label: "Comptes", icon: Users },
+    { id: "ideas" as const, label: "Idées", icon: Lightbulb },
     { id: "notes" as const, label: "Notes", icon: FileText },
     { id: "kanban" as const, label: "Kanban", icon: Columns },
     { id: "surveys" as const, label: "Enquêtes", icon: ClipboardList },

@@ -1,0 +1,81 @@
+name: SPA Loader Pro Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_path:
+        description: Public base path, e.g. /app/my-spa/
+        required: false
+        default: /
+  repository_dispatch:
+    types: [spa-loader-pro-build]
+  push:
+    branches:
+      - "main"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect package manager & lockfile
+        id: pm
+        shell: bash
+        run: |
+          if [ -f bun.lockb ] || [ -f bun.lock ]; then echo "pm=bun" >> "$GITHUB_OUTPUT";
+          elif [ -f pnpm-lock.yaml ]; then echo "pm=pnpm" >> "$GITHUB_OUTPUT";
+          elif [ -f yarn.lock ]; then echo "pm=yarn" >> "$GITHUB_OUTPUT";
+          else echo "pm=npm" >> "$GITHUB_OUTPUT"; fi
+      - uses: oven-sh/setup-bun@v2
+        if: steps.pm.outputs.pm == 'bun'
+      - uses: pnpm/action-setup@v4
+        if: steps.pm.outputs.pm == 'pnpm'
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        shell: bash
+        env:
+          CI: "true"
+          HUSKY: "0"
+        run: |
+          case "${{ steps.pm.outputs.pm }}" in
+            bun) bun install --frozen-lockfile || bun install ;;
+            pnpm) pnpm install --frozen-lockfile || pnpm install ;;
+            yarn) yarn install --frozen-lockfile || yarn install ;;
+            *) npm config set legacy-peer-deps true; npm ci || npm install ;;
+          esac
+      - name: Build SPA
+        shell: bash
+        env:
+          CI: "true"
+          NODE_ENV: production
+          SPA_LOADER_BASE_PATH: ${{ github.event.inputs.base_path || github.event.client_payload.base_path || '/' }}
+          VITE_BASE_PATH: ${{ github.event.inputs.base_path || github.event.client_payload.base_path || '/' }}
+          BASE_URL: ${{ github.event.inputs.base_path || github.event.client_payload.base_path || '/' }}
+          PUBLIC_URL: ${{ github.event.inputs.base_path || github.event.client_payload.base_path || '/' }}
+        run: |
+          case "${{ steps.pm.outputs.pm }}" in
+            bun) bun run build ;;
+            pnpm) pnpm run build ;;
+            yarn) yarn build ;;
+            *) npm run build ;;
+          esac
+      - name: Locate build output
+        shell: bash
+        run: |
+          for dir in dist build out public .output/public .next/standalone client/build client/dist frontend/dist frontend/build app/dist apps/web/dist packages/web/dist; do
+            if [ -f "$dir/index.html" ]; then echo "BUILD_DIR=$dir" >> "$GITHUB_ENV"; exit 0; fi
+          done
+          echo "::error::No build output with index.html found"
+          exit 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spa-loader-pro-build-${{ github.run_id }}
+          path: ${{ env.BUILD_DIR }}
+          if-no-files-found: error

@@ -92,14 +92,15 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
                       key={item.id}
                       onClick={() => handleSectionChange(item.id)}
                       className={cn(
-                        "flex flex-col items-center justify-center p-4 rounded-xl transition-all",
+                        "flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl transition-all min-w-0",
                         activeSection === item.id
                           ? "bg-primary/20 text-primary"
                           : "bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80"
                       )}
                     >
-                      <Icon className="w-6 h-6 mb-2" />
-                      <span className="text-sm font-medium">{item.label}</span>
+                      <Icon className="w-6 h-6 mb-2 flex-shrink-0" />
+                      <span className="text-[11px] sm:text-sm font-medium text-center leading-tight break-words w-full">{item.label}</span>
+
                     </button>
                   );
                 })}

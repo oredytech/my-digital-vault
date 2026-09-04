@@ -120,55 +120,55 @@ export function MobileHeader({ onSignOut }: MobileHeaderProps) {
                   <Menu className="w-4 h-4 text-sidebar-foreground" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[60vh]">
-                <div className="p-4 pb-8">
+              <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[85vh] flex flex-col">
+                <div className="p-4 pb-8 overflow-y-auto overscroll-contain flex-1">
                   <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
                   <SheetTitle className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">
                     Menu
                   </SheetTitle>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
                     {!isInstalled && deferredPrompt && (
                       <button
                         onClick={handleInstall}
-                        className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                        className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all min-w-0"
                       >
                         <Download className="w-6 h-6 mb-2" />
-                        <span className="text-sm font-medium">Installer</span>
+                        <span className="text-[11px] sm:text-sm font-medium text-center leading-tight break-words w-full">Installer</span>
                       </button>
                     )}
                     
                     <button
                       onClick={() => handleMenuAction(() => setFileSystemOpen(true))}
-                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                      className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all min-w-0"
                     >
                       <FolderOpen className={cn("w-6 h-6 mb-2", hasFileSystemAccess && "text-green-500")} />
-                      <span className="text-sm font-medium">Stockage</span>
+                      <span className="text-[11px] sm:text-sm font-medium text-center leading-tight break-words w-full">Stockage</span>
                     </button>
                     
                     <button
                       onClick={() => handleMenuAction(() => setBackupOpen(true))}
-                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                      className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all min-w-0"
                     >
                       <HardDrive className="w-6 h-6 mb-2" />
-                      <span className="text-sm font-medium">Sauvegarde</span>
+                      <span className="text-[11px] sm:text-sm font-medium text-center leading-tight break-words w-full">Sauvegarde</span>
                     </button>
                     
                     <NotificationButton variant="drawer" onAction={() => setSheetOpen(false)} />
                     
                     <button
                       onClick={() => handleMenuAction(() => setTheme(theme === "dark" ? "light" : "dark"))}
-                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all"
+                      className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80 transition-all min-w-0"
                     >
                       {theme === "dark" ? <Sun className="w-6 h-6 mb-2" /> : <Moon className="w-6 h-6 mb-2" />}
-                      <span className="text-sm font-medium">{theme === "dark" ? "Clair" : "Sombre"}</span>
+                      <span className="text-[11px] sm:text-sm font-medium text-center leading-tight break-words w-full">{theme === "dark" ? "Clair" : "Sombre"}</span>
                     </button>
                     
                     <button
                       onClick={() => handleMenuAction(onSignOut)}
-                      className="flex flex-col items-center justify-center p-4 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all"
+                      className="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all min-w-0"
                     >
                       <LogOut className="w-6 h-6 mb-2" />
-                      <span className="text-sm font-medium">Déconnexion</span>
+                      <span className="text-[11px] sm:text-sm font-medium text-center leading-tight break-words w-full">Déconnexion</span>
                     </button>
                   </div>
                 </div>

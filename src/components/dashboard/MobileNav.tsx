@@ -77,13 +77,14 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
               <span className="text-[9px] font-medium truncate">Plus</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[50vh]">
-            <div className="p-4 pb-8">
+          <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[85vh] flex flex-col">
+            <div className="p-4 pb-8 overflow-y-auto overscroll-contain flex-1">
               <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
               <SheetTitle className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">
                 Plus d'options
               </SheetTitle>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
+
                 {moreItems.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -91,14 +92,15 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
                       key={item.id}
                       onClick={() => handleSectionChange(item.id)}
                       className={cn(
-                        "flex flex-col items-center justify-center p-4 rounded-xl transition-all",
+                        "flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl transition-all min-w-0",
                         activeSection === item.id
                           ? "bg-primary/20 text-primary"
                           : "bg-sidebar-accent text-sidebar-foreground hover:bg-sidebar-accent/80"
                       )}
                     >
-                      <Icon className="w-6 h-6 mb-2" />
-                      <span className="text-sm font-medium">{item.label}</span>
+                      <Icon className="w-6 h-6 mb-2 flex-shrink-0" />
+                      <span className="text-[11px] sm:text-sm font-medium text-center leading-tight break-words w-full">{item.label}</span>
+
                     </button>
                   );
                 })}

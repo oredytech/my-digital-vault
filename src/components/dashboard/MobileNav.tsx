@@ -77,13 +77,14 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
               <span className="text-[9px] font-medium truncate">Plus</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[50vh]">
-            <div className="p-4 pb-8">
+          <SheetContent side="bottom" className="bg-sidebar border-sidebar-border rounded-t-2xl p-0 h-auto max-h-[85vh] flex flex-col">
+            <div className="p-4 pb-8 overflow-y-auto overscroll-contain flex-1">
               <div className="w-12 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
               <SheetTitle className="text-lg font-semibold text-sidebar-foreground mb-4 text-center">
                 Plus d'options
               </SheetTitle>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
+
                 {moreItems.map((item) => {
                   const Icon = item.icon;
                   return (

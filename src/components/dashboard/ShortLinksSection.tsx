@@ -398,8 +398,8 @@ export function ShortLinksSection() {
         {links.map((link) => (
           <Card key={link.id} className={`rounded-xl transition-all ${!link.is_active ? "opacity-60" : "hover:shadow-vault"}`}>
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                <div className="flex-1 min-w-0 space-y-1 overflow-hidden">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-foreground truncate">
                       {link.title || link.slug}
@@ -454,7 +454,7 @@ export function ShortLinksSection() {
                     <SocialShareButtons url={`${baseUrl}/s/${link.slug}`} title={link.title || link.slug} compact />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-wrap flex-shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
                   <Button
                     variant="ghost"
                     size="icon"

@@ -44,6 +44,7 @@ export function IdeasKanban() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [mobileColumn, setMobileColumn] = useState<KanbanStatus>("todo");
   const [generatingSuggestions, setGeneratingSuggestions] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",

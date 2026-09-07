@@ -253,12 +253,12 @@ export function ShortLinksSection() {
         </div>
         <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="shadow-vault rounded-xl">
+            <Button className="shadow-vault rounded-xl w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Nouveau lien court
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-md sm:max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingLink ? "Modifier le lien" : "Créer un lien court"}</DialogTitle>
             </DialogHeader>

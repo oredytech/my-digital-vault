@@ -1,10 +1,10 @@
-import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, ClipboardList, Scissors, Lock, ListTodo, BookHeart } from "lucide-react";
+import { Link2, Users, Lightbulb, Bell, BarChart3, Trash2, FileText, Columns, ClipboardList, Scissors, Lock, ListTodo, BookHeart, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks" | "files" | "tasks" | "journal";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks" | "files" | "tasks" | "journal" | "qr";
 
 interface MobileNavProps {
   activeSection: ActiveSection;
@@ -24,6 +24,7 @@ export function MobileNav({ activeSection, onSectionChange }: MobileNavProps) {
   const moreItems = [
     { id: "links" as const, label: "Liens", icon: Link2 },
     { id: "shortlinks" as const, label: "Liens courts", icon: Scissors },
+    { id: "qr" as const, label: "QR Code", icon: QrCode },
     { id: "accounts" as const, label: "Comptes", icon: Users },
     { id: "ideas" as const, label: "Idées", icon: Lightbulb },
     { id: "notes" as const, label: "Notes", icon: FileText },

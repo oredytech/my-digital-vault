@@ -19,6 +19,7 @@ import { ShortLinksSection } from "@/components/dashboard/ShortLinksSection";
 import { FilesVaultSection } from "@/components/dashboard/FilesVaultSection";
 import { TasksSection } from "@/components/dashboard/TasksSection";
 import { JournalHabitsSection } from "@/components/dashboard/JournalHabitsSection";
+import { QRStudioSection } from "@/components/dashboard/QRStudioSection";
 import { PWAInstallPrompt } from "@/components/dashboard/PWAInstallPrompt";
 import { OfflineIndicator } from "@/components/dashboard/OfflineIndicator";
 import { FloatingWidgetDock } from "@/components/dashboard/FloatingWidgetDock";
@@ -26,7 +27,7 @@ import { vaultKeepDB } from "@/lib/indexedDB";
 import { useLocalDatabase } from "@/hooks/useLocalDatabase";
 import { toast } from "sonner";
 
-type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks" | "files" | "tasks" | "journal";
+type ActiveSection = "stats" | "links" | "accounts" | "ideas" | "reminders" | "categories" | "trash" | "notes" | "kanban" | "surveys" | "shortlinks" | "files" | "tasks" | "journal" | "qr";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -133,6 +134,7 @@ const Dashboard = () => {
             {activeSection === "stats" && <StatisticsSection />}
             {activeSection === "tasks" && <TasksSection />}
             {activeSection === "journal" && <JournalHabitsSection />}
+            {activeSection === "qr" && <QRStudioSection />}
             {activeSection === "files" && <FilesVaultSection />}
             {activeSection === "links" && <LinksSection />}
             {activeSection === "accounts" && <AccountsSection />}

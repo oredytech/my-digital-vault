@@ -253,12 +253,12 @@ export function ShortLinksSection() {
         </div>
         <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="shadow-vault rounded-xl">
+            <Button className="shadow-vault rounded-xl w-full sm:w-auto">
               <Plus className="w-4 h-4 mr-2" />
               Nouveau lien court
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-md sm:max-w-md max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingLink ? "Modifier le lien" : "Créer un lien court"}</DialogTitle>
             </DialogHeader>
@@ -290,8 +290,8 @@ export function ShortLinksSection() {
               {!editingLink && (
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug personnalisé (optionnel)</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">{baseUrl}/s/</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+                    <span className="text-xs sm:text-sm text-muted-foreground truncate sm:whitespace-nowrap">{baseUrl}/s/</span>
                     <Input
                       id="slug"
                       value={formData.slug}
@@ -398,8 +398,8 @@ export function ShortLinksSection() {
         {links.map((link) => (
           <Card key={link.id} className={`rounded-xl transition-all ${!link.is_active ? "opacity-60" : "hover:shadow-vault"}`}>
             <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                <div className="flex-1 min-w-0 space-y-1 overflow-hidden">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-foreground truncate">
                       {link.title || link.slug}
@@ -418,8 +418,8 @@ export function ShortLinksSection() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm text-primary font-mono bg-primary/5 px-2 py-0.5 rounded">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <code className="text-[11px] sm:text-sm text-primary font-mono bg-primary/5 px-2 py-0.5 rounded break-all min-w-0">
                       {baseUrl}/s/{link.slug}
                     </code>
                     <Button
@@ -454,7 +454,7 @@ export function ShortLinksSection() {
                     <SocialShareButtons url={`${baseUrl}/s/${link.slug}`} title={link.title || link.slug} compact />
                   </div>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-wrap flex-shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0">
                   <Button
                     variant="ghost"
                     size="icon"

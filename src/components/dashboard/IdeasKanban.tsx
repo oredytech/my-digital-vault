@@ -44,6 +44,7 @@ export function IdeasKanban() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [mobileColumn, setMobileColumn] = useState<KanbanStatus>("todo");
   const [generatingSuggestions, setGeneratingSuggestions] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
@@ -257,8 +258,32 @@ export function IdeasKanban() {
         </Dialog>
       </div>
 
-      {/* Kanban Board - Mobile horizontal scroll, Desktop grid */}
-      <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 -mx-1 px-1 snap-x snap-mandatory lg:grid lg:grid-cols-3 lg:overflow-visible">
+      {/* Mobile column switcher */}
+      <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-muted/40 lg:hidden">
+        {KANBAN_COLUMNS.map((column) => {
+          const Icon = column.icon;
+          const count = getIdeasByStatus(column.id).length;
+          const isActive = mobileColumn === column.id;
+          return (
+            <button
+              key={column.id}
+              type="button"
+              onClick={() => setMobileColumn(column.id)}
+              className={cn(
+                "flex items-center justify-center gap-1 rounded-lg px-1.5 py-2 text-[11px] font-medium transition-colors min-w-0",
+                isActive ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+              )}
+            >
+              <Icon className={cn("w-3.5 h-3.5 shrink-0", column.color)} />
+              <span className="truncate">{column.label}</span>
+              <span className="text-[10px] opacity-70">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Kanban Board - one column on mobile, grid on desktop */}
+      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-3">
         {KANBAN_COLUMNS.map((column) => {
           const columnIdeas = getIdeasByStatus(column.id);
           const Icon = column.icon;
@@ -266,7 +291,10 @@ export function IdeasKanban() {
           return (
             <div 
               key={column.id} 
-              className="flex-shrink-0 w-[85vw] sm:w-[300px] lg:w-auto lg:flex-1 snap-center"
+              className={cn(
+                "min-w-0 w-full",
+                mobileColumn === column.id ? "block" : "hidden lg:block"
+              )}
             >
               <div className="bg-muted/30 rounded-xl p-2 sm:p-3 h-full">
                 <div className="flex items-center gap-2 mb-2 sm:mb-3 px-1">

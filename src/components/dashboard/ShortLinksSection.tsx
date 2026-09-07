@@ -290,8 +290,8 @@ export function ShortLinksSection() {
               {!editingLink && (
                 <div className="space-y-2">
                   <Label htmlFor="slug">Slug personnalisé (optionnel)</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground whitespace-nowrap">{baseUrl}/s/</span>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+                    <span className="text-xs sm:text-sm text-muted-foreground truncate sm:whitespace-nowrap">{baseUrl}/s/</span>
                     <Input
                       id="slug"
                       value={formData.slug}
@@ -418,8 +418,8 @@ export function ShortLinksSection() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm text-primary font-mono bg-primary/5 px-2 py-0.5 rounded">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <code className="text-[11px] sm:text-sm text-primary font-mono bg-primary/5 px-2 py-0.5 rounded break-all min-w-0">
                       {baseUrl}/s/{link.slug}
                     </code>
                     <Button

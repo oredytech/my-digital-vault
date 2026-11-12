@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Upload, Download, Trash2, File as FileIcon, Search, Lock, FolderOpen } from "lucide-react";
+import { DocumentScanner } from "./DocumentScanner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -126,14 +127,15 @@ export function FilesVaultSection() {
             Stockage privé chiffré — accessible uniquement par vous
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Input
             value={folder}
             onChange={(e) => setFolder(e.target.value)}
             placeholder="Dossier"
-            className="w-32"
+            className="w-full sm:w-32"
           />
-          <Button asChild disabled={uploading}>
+          <DocumentScanner folder={folder} onSaved={load} />
+          <Button asChild disabled={uploading} className="flex-1 sm:flex-none">
             <label className="cursor-pointer">
               <Upload className="w-4 h-4 mr-2" />
               {uploading ? "Envoi..." : "Téléverser"}
